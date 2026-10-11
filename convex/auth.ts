@@ -5,6 +5,7 @@ import {
   authorizationError,
 } from "../lib/auth/authorization";
 import type { Doc } from "./_generated/dataModel";
+import type { Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 
 type AuthenticatedContext = Pick<QueryCtx | MutationCtx, "auth">;
@@ -39,4 +40,13 @@ export async function requireProfile(ctx: ProfileContext): Promise<Doc<"users">>
   }
 
   return profile;
+}
+
+export function assertProfileOwner(
+  ownerProfileId: Id<"users">,
+  actorProfileId: Id<"users">,
+) {
+  if (ownerProfileId !== actorProfileId) {
+    throw new ConvexError(authorizationError(AuthorizationErrorCode.Forbidden));
+  }
 }

@@ -28,9 +28,9 @@ function profileFields(identity: {
   return {
     tokenIdentifier: profile.tokenIdentifier,
     clerkUserId: profile.clerkUserId,
-    ...(profile.email ? { email: profile.email } : {}),
-    ...(profile.name ? { name: profile.name } : {}),
-    ...(profile.imageUrl ? { imageUrl: profile.imageUrl } : {}),
+    email: profile.email,
+    name: profile.name,
+    imageUrl: profile.imageUrl,
   };
 }
 

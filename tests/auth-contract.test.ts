@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { ConvexError } from "convex/values";
 
+import { assertProfileOwner } from "../convex/auth";
+import type { Id } from "../convex/_generated/dataModel";
 import {
   AuthorizationErrorCode,
   assertOwner,
@@ -63,6 +66,24 @@ test("rejects a cross-account ownership check with a typed forbidden error", () 
     (error: unknown) =>
       error instanceof Error &&
       error.message === "You do not have permission to perform this action.",
+  );
+});
+
+test("returns a structured Convex forbidden error for cross-profile access", () => {
+  assert.throws(
+    () =>
+      assertProfileOwner(
+        "profile_owner" as Id<"users">,
+        "profile_other" as Id<"users">,
+      ),
+    (error: unknown) => {
+      assert.ok(error instanceof ConvexError);
+      assert.deepEqual(error.data, {
+        code: "FORBIDDEN",
+        message: "You do not have permission to perform this action.",
+      });
+      return true;
+    },
   );
 });
 
