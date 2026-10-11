@@ -7,7 +7,9 @@
     "backend": "convex dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "node --import tsx --test tests/*.test.ts",
+    "test:integration": "node --import tsx scripts/run-integration-tests.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.9.11",
@@ -25,6 +27,7 @@
     "eslint": "10.12.0",
     "eslint-config-next": "16.3.8",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   }
 }
