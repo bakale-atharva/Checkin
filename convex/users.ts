@@ -1,6 +1,5 @@
 import { v } from "convex/values";
 
-import { profileFieldsFromIdentity } from "../lib/auth/profile";
 import { requireIdentity } from "./auth";
 import { mutation, query } from "./_generated/server";
 
@@ -16,30 +15,18 @@ const profileValidator = v.object({
   updatedAt: v.number(),
 });
 
-function profileFields(identity: {
-  tokenIdentifier: string;
-  subject: string;
-  email?: string;
-  name?: string;
-  pictureUrl?: string;
-}) {
-  const profile = profileFieldsFromIdentity(identity);
-
-  return {
-    tokenIdentifier: profile.tokenIdentifier,
-    clerkUserId: profile.clerkUserId,
-    email: profile.email,
-    name: profile.name,
-    imageUrl: profile.imageUrl,
-  };
-}
-
 export const bootstrapProfile = mutation({
   args: {},
   returns: profileValidator,
   handler: async (ctx) => {
     const identity = await requireIdentity(ctx);
-    const fields = profileFields(identity);
+    const fields = {
+      tokenIdentifier: identity.tokenIdentifier,
+      clerkUserId: identity.subject,
+      email: identity.email,
+      name: identity.name,
+      imageUrl: identity.pictureUrl,
+    };
     const now = Date.now();
     const existing = await ctx.db
       .query("users")

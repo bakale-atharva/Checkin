@@ -20,7 +20,7 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 ## Authentication and testing
 
-Clerk owns sign-in identities; Convex stores an application profile keyed by the authenticated identity's stable token identifier. The application protects host, trips, checkout, messages, wishlists, and billing routes while leaving discovery routes public. Never place Clerk or Convex environment values in Git.
+Clerk owns sign-in identities; Convex stores an application profile keyed by the authenticated identity's stable token identifier. Private pages, Route Handlers, Server Functions, and Convex operations must enforce authentication at the resource itself; discovery remains public. Never place Clerk or Convex environment values in Git.
 
 Run isolated TypeScript tests with Node's built-in runner:
 
@@ -28,17 +28,9 @@ Run isolated TypeScript tests with Node's built-in runner:
 pnpm test
 ```
 
-There is intentionally no Vitest or `convex-test` configuration in this project. Integration tests must be explicitly targeted at a dedicated non-production Convex deployment. They fail closed when either required value is absent:
+There is intentionally no Vitest or `convex-test` configuration in this project. B7 will add backend integration suites against a dedicated non-production Convex deployment.
 
-```bash
-CHECKIN_CONVEX_TEST_DEPLOYMENT=true \
-CONVEX_TEST_DEPLOYMENT_URL=https://your-dedicated-test-deployment.convex.cloud \
-pnpm test:integration
-```
-
-Do not set `CONVEX_TEST_DEPLOYMENT_URL` to a development or production deployment. B7 adds the backend integration suites; B1 establishes the dedicated-target gate.
-
-For manual Clerk verification, maintain three isolated test identities: a guest, a host, and an unrelated account. In the Clerk test instance, verify email/password, Google, and GitHub sign-in separately. For each identity, confirm that the authenticated client creates or refreshes only its own Convex profile, an unauthenticated protected route redirects to sign-in, and one identity cannot read or mutate another identity's private data once those feature APIs are added.
+For manual Clerk verification, maintain three isolated test identities: a guest, a host, and an unrelated account. In the Clerk test instance, verify email/password, Google, and GitHub sign-in separately. For each identity, confirm that the authenticated client creates or refreshes only its own Convex profile. When private resources are added, verify that an unauthenticated request redirects to sign-in and one identity cannot read or mutate another identity's data.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 

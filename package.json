@@ -8,8 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --import tsx --test tests/*.test.ts",
-    "test:integration": "node --import tsx scripts/run-integration-tests.ts"
+    "test": "node --import tsx --test"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.9.11",

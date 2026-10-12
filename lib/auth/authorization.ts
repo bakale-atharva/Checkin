@@ -19,19 +19,3 @@ export function authorizationError(code: AuthorizationErrorCode) {
     message: authorizationErrors[code],
   };
 }
-
-export class AuthorizationError extends Error {
-  readonly code: AuthorizationErrorCode;
-
-  constructor(code: AuthorizationErrorCode) {
-    super(authorizationError(code).message);
-    this.name = "AuthorizationError";
-    this.code = code;
-  }
-}
-
-export function assertOwner(ownerId: string, actorId: string) {
-  if (ownerId !== actorId) {
-    throw new AuthorizationError(AuthorizationErrorCode.Forbidden);
-  }
-}

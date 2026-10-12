@@ -4,13 +4,10 @@ import {
   AuthorizationErrorCode,
   authorizationError,
 } from "../lib/auth/authorization";
-import type { Doc } from "./_generated/dataModel";
 import type { Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 
-type AuthenticatedContext = Pick<QueryCtx | MutationCtx, "auth">;
-
-export async function requireIdentity(ctx: AuthenticatedContext) {
+export async function requireIdentity(ctx: QueryCtx | MutationCtx) {
   const identity = await ctx.auth.getUserIdentity();
 
   if (!identity) {
@@ -22,9 +19,7 @@ export async function requireIdentity(ctx: AuthenticatedContext) {
   return identity;
 }
 
-type ProfileContext = Pick<QueryCtx | MutationCtx, "auth" | "db">;
-
-export async function requireProfile(ctx: ProfileContext): Promise<Doc<"users">> {
+export async function requireProfile(ctx: QueryCtx | MutationCtx) {
   const identity = await requireIdentity(ctx);
   const profile = await ctx.db
     .query("users")
