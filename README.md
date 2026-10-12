@@ -1,50 +1,104 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Checkin
 
-## Getting Started
+Checkin is a full-stack marketplace for discovering stays, managing listings, and reserving a place to stay. It is being built with a guest experience inspired by familiar travel marketplaces and practical tools for hosts.
 
-First, run the development server:
+The project is in active development. The current release establishes the B1 authentication and authorization foundation; listings, search, reservations, payments, and host dashboards are roadmap work, not yet available features.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## What is implemented
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- Clerk authentication is connected to Convex.
+- Signed-in users get an application profile keyed to Clerk's stable token identifier.
+- Convex helpers derive the authenticated user on the server and provide typed authorization errors for future resource ownership checks.
+- Public discovery remains the intended model; future private pages and backend operations must enforce authentication and ownership at the resource itself.
+- Isolated TypeScript tests run through Node's built-in test runner and `tsx`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Technology
 
-## Authentication and testing
+- [Next.js 16](https://nextjs.org/) and React 19
+- [Convex](https://www.convex.dev/) for application data and server functions
+- [Clerk](https://clerk.com/) for identity and future subscription management
+- Tailwind CSS 4
+- TypeScript, pnpm, ESLint 10
 
-Clerk owns sign-in identities; Convex stores an application profile keyed by the authenticated identity's stable token identifier. Private pages, Route Handlers, Server Functions, and Convex operations must enforce authentication at the resource itself; discovery remains public. Never place Clerk or Convex environment values in Git.
+## Requirements
 
-Run isolated TypeScript tests with Node's built-in runner:
+- Node.js 20.9 or newer
+- pnpm
+- A Clerk development instance configured for this app
+- A Convex development deployment
 
-```bash
-pnpm test
-```
+## Local setup
 
-There is intentionally no Vitest or `convex-test` configuration in this project. B7 will add backend integration suites against a dedicated non-production Convex deployment.
+1. Install dependencies.
 
-For manual Clerk verification, maintain three isolated test identities: a guest, a host, and an unrelated account. In the Clerk test instance, verify email/password, Google, and GitHub sign-in separately. For each identity, confirm that the authenticated client creates or refreshes only its own Convex profile. When private resources are added, verify that an unauthenticated request redirects to sign-in and one identity cannot read or mutate another identity's data.
+   ```bash
+   pnpm install
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+2. Create a local environment file (for example, `.env.local`). Do not commit it. The app currently requires these values:
 
-## Learn More
+   | Variable | Used by |
+   | --- | --- |
+   | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Next.js / Clerk client |
+   | `CLERK_SECRET_KEY` | Next.js / Clerk server |
+   | `NEXT_PUBLIC_CONVEX_URL` | Convex client |
+   | `CLERK_FRONTEND_API_URL` | Convex Clerk issuer configuration |
 
-To learn more about Next.js, take a look at the following resources:
+   Obtain the values from your Clerk and Convex development environments; this repository intentionally contains no credentials or environment values.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+3. Start Convex in one terminal.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+   ```bash
+   pnpm run backend
+   ```
 
-## Deploy on Vercel
+4. Start the Next.js app in another terminal.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+   ```bash
+   pnpm run frontend
+   ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+5. Visit [http://localhost:3000](http://localhost:3000).
+
+## Commands
+
+| Command | Purpose |
+| --- | --- |
+| `pnpm run frontend` | Start the Next.js development server. |
+| `pnpm run backend` | Start Convex development. |
+| `pnpm run build` | Create a production Next.js build. |
+| `pnpm start` | Run the production server after a build. |
+| `pnpm run lint` | Run ESLint. |
+| `pnpm test` | Run isolated TypeScript tests with Node's test runner. |
+
+## Authentication and authorization
+
+Clerk owns sign-in identities. Convex owns Checkin records, including the identity-linked user profile. Backend code must always establish the caller from Convex authentication context and enforce access against the specific resource being read or changed; a client-supplied user ID is never proof of ownership.
+
+For manual verification, use three separate Clerk test accounts: a guest, a host, and an unrelated user. Check email/password, Google, and GitHub sign-in independently. Each account should create or refresh only its own profile. As private resources are added, verify that unauthenticated users are sent to sign-in and that one account cannot read or mutate another account's data.
+
+## Testing policy
+
+This project deliberately does **not** use Vitest or `convex-test`.
+
+- `pnpm test` is reserved for isolated logic such as pricing, dates, and cancellation policies, using Node's built-in test runner with `tsx`.
+- A future `pnpm test:integration` command will target a dedicated, non-production Convex deployment and must fail early when that target is not configured.
+- A future `pnpm test:e2e` command will cover browser journeys, responsive behavior, and accessibility with Playwright.
+
+Never point tests or fixtures at production data.
+
+## Product roadmap
+
+The implementation plan is maintained in [`.claude/plans/PLAN.md`](.claude/plans/PLAN.md). Its delivery sequence is:
+
+1. **B1 — Authentication, permissions, and testing foundation** (current foundation)
+2. **B2–B7 — Backend:** listings and availability, Clerk billing, search, reservations, dashboards, and operational verification
+3. **F1–F7 — Frontend:** design system, discovery and maps, booking, host tools, trips and earnings, messaging, and final accessibility/resilience work
+
+The planned marketplace supports instant booking and request-to-book. Until a real payment provider is deliberately introduced, reservation payments, refunds, transfers, and payouts will be clearly marked as simulations. Other agreed defaults include English and USD, one reservable unit per listing, 1–28-night stays, editable 15:00 check-in / 11:00 checkout defaults, a sample 10% accommodation service fee, and zero demo tax.
+
+Real payments, payouts, taxes, email/SMS delivery, co-host teams, multi-currency settlement, and external calendar synchronization remain future work.
+
+## Contributing
+
+Use a `codex/` feature branch and pull request for each implementation phase. Do not merge a phase until it has been reviewed and approved. Keep environment files, credentials, generated caches, and other secrets out of Git.
