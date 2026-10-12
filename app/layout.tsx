@@ -8,6 +8,7 @@ import {
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Geist, Geist_Mono } from "next/font/google";
+import { ConvexClientProvider } from "./convex-client-provider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -33,7 +34,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         <ClerkProvider>
-          <header className="sticky top-0 z-50 border-b border-black/[.08] bg-white/80 backdrop-blur dark:border-white/[.145] dark:bg-black/80">
+          <ConvexClientProvider>
+            <header className="sticky top-0 z-50 border-b border-black/[.08] bg-white/80 backdrop-blur dark:border-white/[.145] dark:bg-black/80">
             <nav className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
               <Link
                 href="/"
@@ -60,7 +62,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               </div>
             </nav>
           </header>
-          {children}
+            {children}
+          </ConvexClientProvider>
         </ClerkProvider>
       </body>
     </html>
