@@ -10,5 +10,94 @@ export default defineSchema({
     imageUrl: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
-  }).index("by_token_identifier", ["tokenIdentifier"]),
+  })
+    .index("by_token_identifier", ["tokenIdentifier"])
+    .index("by_created_at", ["createdAt"]),
+  listings: defineTable({
+    ownerProfileId: v.id("users"),
+    status: v.union(
+      v.literal("draft"),
+      v.literal("published"),
+      v.literal("archived"),
+    ),
+    title: v.string(),
+    description: v.string(),
+    propertyType: v.union(
+      v.literal("entire_home"),
+      v.literal("private_room"),
+      v.literal("shared_room"),
+    ),
+    category: v.string(),
+    maxGuests: v.number(),
+    bedrooms: v.number(),
+    beds: v.number(),
+    bathrooms: v.number(),
+    amenities: v.array(v.string()),
+    rules: v.array(v.string()),
+    privateAddress: v.object({
+      line1: v.string(),
+      line2: v.optional(v.string()),
+      city: v.string(),
+      region: v.optional(v.string()),
+      postalCode: v.string(),
+      countryCode: v.string(),
+    }),
+    publicLocation: v.object({
+      city: v.string(),
+      region: v.optional(v.string()),
+      countryCode: v.string(),
+      latitude: v.number(),
+      longitude: v.number(),
+    }),
+    timezone: v.string(),
+    checkInTime: v.string(),
+    checkOutTime: v.string(),
+    nightlyPriceCents: v.number(),
+    cleaningFeeCents: v.number(),
+    currency: v.literal("USD"),
+    bookingMode: v.union(v.literal("instant"), v.literal("request")),
+    seedKey: v.optional(v.string()),
+    coverPhotoId: v.optional(v.id("listingPhotos")),
+    publishedAt: v.optional(v.number()),
+    archivedAt: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_owner_profile_id", ["ownerProfileId"])
+    .index("by_status", ["status"])
+    .index("by_status_and_created_at", ["status", "createdAt"])
+    .index("by_seed_key", ["seedKey"]),
+  listingPhotos: defineTable({
+    listingId: v.id("listings"),
+    storageId: v.id("_storage"),
+    altText: v.optional(v.string()),
+    position: v.number(),
+    createdAt: v.number(),
+  }).index("by_listing_id_and_position", ["listingId", "position"]),
+  pendingListingPhotoUploads: defineTable({
+    listingId: v.id("listings"),
+    ownerProfileId: v.id("users"),
+    storageId: v.id("_storage"),
+    status: v.literal("pending"),
+    expiresAt: v.number(),
+    createdAt: v.number(),
+  })
+    .index("by_listing_id", ["listingId"])
+    .index("by_status_and_expires_at", ["status", "expiresAt"]),
+  blockedDates: defineTable({
+    listingId: v.id("listings"),
+    date: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_listing_id", ["listingId"])
+    .index("by_listing_id_and_date", ["listingId", "date"]),
+  nightlyPriceOverrides: defineTable({
+    listingId: v.id("listings"),
+    date: v.string(),
+    nightlyPriceCents: v.number(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_listing_id", ["listingId"])
+    .index("by_listing_id_and_date", ["listingId", "date"]),
 });
