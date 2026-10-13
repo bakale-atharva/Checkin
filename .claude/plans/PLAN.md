@@ -12,6 +12,9 @@ Use instead:
 - **Backend integration tests against a dedicated Convex test deployment** for authorization, transactions, subscriptions, and scheduled behavior.
 - **Playwright** for browser journeys, responsive behavior, and accessibility checks.
 
+Test placement: do not create a root-level `tests/` directory. Co-locate Node
+test files with the source module they exercise, using the `*.test.ts` suffix.
+
 Document this exception in project instructions during implementation so later phases and agents follow it.
 
 Confirmed product decisions remain:

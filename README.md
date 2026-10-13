@@ -2,13 +2,16 @@
 
 Checkin is a full-stack marketplace for discovering stays, managing listings, and reserving a place to stay. It is being built with a guest experience inspired by familiar travel marketplaces and practical tools for hosts.
 
-The project is in active development. The current release establishes the B1 authentication and authorization foundation; listings, search, reservations, payments, and host dashboards are roadmap work, not yet available features.
+The project is in active development. The current release establishes authentication plus the backend foundation for host-managed listings; search, reservations, payments, and host dashboards remain roadmap work.
 
 ## What is implemented
 
 - Clerk authentication is connected to Convex.
 - Signed-in users get an application profile keyed to Clerk's stable token identifier.
 - Convex helpers derive the authenticated user on the server and provide typed authorization errors for future resource ownership checks.
+- Hosts can create, edit, publish, unpublish, archive, and safely delete unused listing drafts through ownership-scoped Convex functions.
+- Listing photos use Convex storage, pending uploads expire for cleanup, and blocked dates and nightly overrides are maintained separately from listing documents.
+- Public listing reads expose only approximate locations and never return a property's exact address.
 - Public discovery remains the intended model; future private pages and backend operations must enforce authentication and ownership at the resource itself.
 - Isolated TypeScript tests run through Node's built-in test runner and `tsx`.
 
