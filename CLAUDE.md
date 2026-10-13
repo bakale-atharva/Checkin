@@ -21,6 +21,11 @@ This file gives Claude Code the context it needs to work in this repo. Keep it s
 - **Test:** `pnpm test`
 - **Lint / format:** `pnpm run lint`
 
+## Test placement
+
+Do not create a root-level `tests/` directory. Co-locate Node test files with
+the source module they exercise, using the `*.test.ts` suffix.
+
 ## Git Workflow
 
 Create branches for every feature or phase. The plan will be divided into phases. Create branches for each phase, and after you are done, create a pull request. Only after I approve or the user approves, merge it.

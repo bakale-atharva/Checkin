@@ -7,7 +7,7 @@ import {
   assertListingCanBePublished,
   assertListingStatusTransition,
   isValidStayDate,
-} from "../../lib/listings/listing-policy";
+} from "./listing-policy";
 
 test("allows a draft to be published and later returned to draft", () => {
   assert.doesNotThrow(() => assertListingStatusTransition("draft", "published"));

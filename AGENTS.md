@@ -53,6 +53,11 @@ Use instead:
 - `pnpm test:integration` — Node-runner tests against a **dedicated Convex test deployment**. Must fail early if no test target is configured; never fall back to production.
 - `pnpm test:e2e` — Playwright browser journeys, responsive and accessibility checks.
 
+### Test placement
+
+Do not create a root-level `tests/` directory. Co-locate Node test files with
+the source module they exercise, using the `*.test.ts` suffix.
+
 ## Git Workflow
 
 Create branches for every feature or phase. The plan will be divided into phases. Create branches for each phase, and after you are done, create a pull request. Only after I approve or the user approves, merge it.
