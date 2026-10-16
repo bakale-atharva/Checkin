@@ -88,3 +88,17 @@ function handleButtonPress() {
 Use the Convex CLI to push your functions to a deployment. See everything
 the Convex CLI can do by running `npx convex -h` in your project root
 directory. To learn more, launch the docs with `npx convex docs`.
+
+## Search index rollout
+
+Before enabling destination search on a deployment with existing published
+listings, run the internal `search.backfillSearchFields` mutation against that
+same deployment in 100-item pages. Supply its returned `continueCursor` as the
+next page's cursor until `isDone` is true. The mutation derives only
+`searchCity` and `searchCountryCode` from each listing's public pin; it never
+reads or exposes a private address. New drafts, public-location edits,
+publication, and fixture seeds populate those fields automatically.
+
+Deploy the schema and function first, complete the backfill, then expose
+destination search in the client. This keeps the indexed search result set
+complete during the schema rollout.

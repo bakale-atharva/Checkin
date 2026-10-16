@@ -1,6 +1,7 @@
 import { ConvexError, v } from "convex/values";
 
 import { internalMutation } from "./_generated/server";
+import { listingSearchFields } from "../lib/search/listing-search-fields";
 
 const SEED_LISTING_COUNT = 60;
 
@@ -85,6 +86,7 @@ export const seedListings = internalMutation({
         cleaningFeeCents: 2500,
         currency: "USD",
         bookingMode: index % 2 === 0 ? "instant" : "request",
+        ...listingSearchFields(city),
         ...(status === "published" ? { publishedAt: now } : {}),
         ...(status === "archived" ? { archivedAt: now } : {}),
         seedKey: args.seedKey,

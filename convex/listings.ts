@@ -12,6 +12,7 @@ import {
   isValidStayDate,
 } from "../lib/listings/listing-policy";
 import { publicationAllowance } from "../lib/billing/host-plan-policy";
+import { listingSearchFields } from "../lib/search/listing-search-fields";
 import { assertProfileOwner, requireProfile } from "./auth";
 import type { Id } from "./_generated/dataModel";
 import { internalMutation, mutation, query } from "./_generated/server";
@@ -71,6 +72,9 @@ const listingValidator = v.object({
   cleaningFeeCents: v.number(),
   currency: v.literal("USD"),
   bookingMode: bookingModeValidator,
+  searchCity: v.optional(v.string()),
+  searchCountryCode: v.optional(v.string()),
+  publishedRating: v.optional(v.number()),
   seedKey: v.optional(v.string()),
   coverPhotoId: v.optional(v.id("listingPhotos")),
   publishedAt: v.optional(v.number()),
@@ -227,8 +231,11 @@ export const update = mutation({
     const next = { ...listing, ...args.fields };
     assertListingFields(next);
     const updatedAt = Date.now();
-    await ctx.db.patch(listing._id, { ...args.fields, updatedAt });
-    return { ...listing, ...args.fields, updatedAt };
+    const searchFields = args.fields.publicLocation
+      ? listingSearchFields(args.fields.publicLocation)
+      : {};
+    await ctx.db.patch(listing._id, { ...args.fields, ...searchFields, updatedAt });
+    return { ...listing, ...args.fields, ...searchFields, updatedAt };
   },
 });
 
@@ -277,6 +284,9 @@ export const setStatus = mutation({
       status: args.status,
       updatedAt: now,
       ...(args.status === "published" ? { publishedAt: now } : {}),
+      ...(args.status === "published"
+        ? { ...listingSearchFields(listing.publicLocation) }
+        : {}),
       ...(args.status === "archived" ? { archivedAt: now } : {}),
       ...(args.status === "published" ? { bookingSuspended: false } : {}),
     };
