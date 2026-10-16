@@ -45,6 +45,7 @@ export type SearchableListing = {
 export type SearchSnapshot = {
   contractVersion: 1;
   listingIds: string[];
+  results: Array<Omit<SearchableListing, "_id"> & { listingId: string }>;
 };
 
 export class SearchValidationError extends Error {
@@ -200,13 +201,13 @@ export function buildSearchSnapshot(
     throw new SearchValidationError("Search is too broad. Choose a narrower destination or filters.");
   }
 
-  const listingIds = candidates
+  const results = candidates
     .filter((listing) => !unavailableListingIds.has(listing._id))
     .filter((listing) => matchesFilters(listing, input))
     .sort((left, right) => compareListings(left, right, input))
-    .map((listing) => listing._id);
+    .map(({ _id, ...listing }) => ({ listingId: _id, ...listing }));
 
-  return { contractVersion: 1, listingIds };
+  return { contractVersion: 1, listingIds: results.map((result) => result.listingId), results };
 }
 
 export function pageSnapshotIds(listingIds: string[], offset: number) {

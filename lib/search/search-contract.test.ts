@@ -66,6 +66,8 @@ test("creates a shared cards-and-pins snapshot after filtering unavailable listi
   );
 
   assert.deepEqual(snapshot.listingIds, ["listing-a"]);
+  assert.deepEqual(snapshot.results.map((result) => result.listingId), ["listing-a"]);
+  assert.equal(snapshot.results[0]?.nightlyPriceCents, 12_000);
   assert.equal(snapshot.contractVersion, 1);
 });
 

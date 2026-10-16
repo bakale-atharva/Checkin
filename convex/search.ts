@@ -1,6 +1,7 @@
 import { ConvexError, v } from "convex/values";
 
 import {
+  MAX_SEARCH_CANDIDATES,
   SEARCH_SNAPSHOT_TTL_MS,
   SearchValidationError,
   buildSearchSnapshot,
@@ -10,7 +11,9 @@ import {
 } from "../lib/search/search-contract";
 import { seededDestinations } from "../lib/search/seeded-destinations";
 import type { Doc, Id } from "./_generated/dataModel";
-import { mutation, query } from "./_generated/server";
+import { paginationOptsValidator } from "convex/server";
+import { internal } from "./_generated/api";
+import { internalMutation, mutation, query } from "./_generated/server";
 import type { MutationCtx } from "./_generated/server";
 
 const propertyTypeValidator = v.union(
@@ -107,6 +110,15 @@ async function unavailableListingIds(
   return new Set(blocked.filter((listingId): listingId is string => listingId !== null));
 }
 
+async function deleteSnapshot(ctx: MutationCtx, snapshotId: Id<"searchSnapshots">) {
+  const results = await ctx.db
+    .query("searchSnapshotResults")
+    .withIndex("by_snapshot_id_and_position", (q) => q.eq("snapshotId", snapshotId))
+    .take(MAX_SEARCH_CANDIDATES + 1);
+  await Promise.all(results.map((result) => ctx.db.delete(result._id)));
+  await ctx.db.delete(snapshotId);
+}
+
 function searchResult(listing: Doc<"listings">) {
   return {
     listingId: listing._id,
@@ -137,13 +149,20 @@ export const createSnapshot = mutation({
   handler: async (ctx, args) => {
     const input = normalizeOrThrow(args);
     const now = Date.now();
-    const expiredSnapshots = await ctx.db
+    const [expiredSnapshot] = await ctx.db
       .query("searchSnapshots")
       .withIndex("by_expires_at", (q) => q.lt("expiresAt", now))
-      .take(100);
-    await Promise.all(expiredSnapshots.map((snapshot) => ctx.db.delete(snapshot._id)));
+      .take(1);
+    if (expiredSnapshot) await deleteSnapshot(ctx, expiredSnapshot._id);
 
-    const candidates = (await candidatesFor(ctx, input.destination)).filter(
+    const rawCandidates = await candidatesFor(ctx, input.destination);
+    if (rawCandidates.length > MAX_SEARCH_CANDIDATES) {
+      throw searchError(
+        "SEARCH_TOO_BROAD",
+        "Search is too broad. Choose a narrower destination or filters.",
+      );
+    }
+    const candidates = rawCandidates.filter(
       (listing) => !listing.bookingSuspended,
     );
     const unavailable = await unavailableListingIds(ctx, candidates, input.checkIn, input.checkOut);
@@ -174,16 +193,26 @@ export const createSnapshot = mutation({
       }
       throw error;
     }
-    const byId = new Map(candidates.map((listing) => [String(listing._id), listing._id]));
+    const byId = new Map(candidates.map((listing) => [String(listing._id), listing]));
     const expiresAt = now + SEARCH_SNAPSHOT_TTL_MS;
     const snapshotId = await ctx.db.insert("searchSnapshots", {
-      listingIds: snapshot.listingIds.map((listingId) => {
-        const id = byId.get(listingId);
-        if (!id) throw new Error("Search snapshot contained an unknown listing.");
-        return id;
-      }),
+      total: snapshot.listingIds.length,
       expiresAt,
       createdAt: now,
+    });
+    await Promise.all(
+      snapshot.listingIds.map(async (listingId, position) => {
+        const listing = byId.get(listingId);
+        if (!listing) throw new Error("Search snapshot contained an unknown listing.");
+        await ctx.db.insert("searchSnapshotResults", {
+          snapshotId,
+          position,
+          ...searchResult(listing),
+        });
+      }),
+    );
+    await ctx.scheduler.runAfter(SEARCH_SNAPSHOT_TTL_MS, internal.search.expireSnapshot, {
+      snapshotId,
     });
     return { snapshotId, expiresAt, total: snapshot.listingIds.length };
   },
@@ -202,29 +231,82 @@ export const page = query({
     if (!snapshot || snapshot.expiresAt <= Date.now()) {
       throw searchError("SEARCH_SNAPSHOT_EXPIRED", "This search has expired. Run it again.");
     }
-    let page;
     try {
-      page = pageSnapshotIds(snapshot.listingIds.map(String), args.offset);
+      pageSnapshotIds([], args.offset);
     } catch (error) {
       if (error instanceof SearchValidationError) {
         throw searchError("INVALID_SEARCH_PAGE", error.message);
       }
       throw error;
     }
-    const listings = await Promise.all(
-      page.listingIds.map((listingId) => ctx.db.get(listingId as Id<"listings">)),
-    );
+    const resultRows = await ctx.db
+      .query("searchSnapshotResults")
+      .withIndex("by_snapshot_id_and_position", (q) =>
+        q.eq("snapshotId", snapshot._id).gte("position", args.offset),
+      )
+      .take(24);
+    const listings = await Promise.all(resultRows.map((result) => ctx.db.get(result.listingId)));
+    const nextOffset = args.offset + resultRows.length;
     return {
-      page: listings
-        .filter(
-          (listing): listing is Doc<"listings"> =>
-            listing !== null && listing.status === "published" && !listing.bookingSuspended,
-        )
-        .map(searchResult),
-      nextOffset: page.nextOffset,
-      isDone: page.isDone,
+      page: resultRows.filter((_, index) => {
+        const listing = listings[index];
+        return listing?.status === "published" && !listing.bookingSuspended;
+      }).map((result) => ({
+        listingId: result.listingId,
+        title: result.title,
+        city: result.city,
+        region: result.region,
+        countryCode: result.countryCode,
+        latitude: result.latitude,
+        longitude: result.longitude,
+        nightlyPriceCents: result.nightlyPriceCents,
+        publishedRating: result.publishedRating,
+        maxGuests: result.maxGuests,
+        category: result.category,
+        propertyType: result.propertyType,
+        amenities: result.amenities,
+        bookingMode: result.bookingMode,
+        coverPhotoId: result.coverPhotoId,
+      })),
+      nextOffset,
+      isDone: nextOffset >= snapshot.total,
       expiresAt: snapshot.expiresAt,
     };
+  },
+});
+
+export const expireSnapshot = internalMutation({
+  args: { snapshotId: v.id("searchSnapshots") },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const snapshot = await ctx.db.get(args.snapshotId);
+    if (snapshot && snapshot.expiresAt <= Date.now()) await deleteSnapshot(ctx, snapshot._id);
+    return null;
+  },
+});
+
+export const backfillSearchFields = internalMutation({
+  args: { paginationOpts: paginationOptsValidator },
+  returns: v.object({ continueCursor: v.string(), isDone: v.boolean(), updated: v.number() }),
+  handler: async (ctx, args) => {
+    const page = await ctx.db
+      .query("listings")
+      .withIndex("by_status_and_created_at", (q) => q.eq("status", "published"))
+      .paginate(args.paginationOpts);
+    let updated = 0;
+    await Promise.all(
+      page.page.map(async (listing) => {
+        const fields = {
+          searchCity: listing.publicLocation.city.trim().toLocaleLowerCase("en-US"),
+          searchCountryCode: listing.publicLocation.countryCode.trim().toUpperCase(),
+        };
+        if (listing.searchCity !== fields.searchCity || listing.searchCountryCode !== fields.searchCountryCode) {
+          await ctx.db.patch(listing._id, fields);
+          updated += 1;
+        }
+      }),
+    );
+    return { continueCursor: page.continueCursor, isDone: page.isDone, updated };
   },
 });
 
