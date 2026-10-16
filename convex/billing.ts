@@ -10,6 +10,8 @@ import { internalMutation, mutation, query } from "./_generated/server";
 import type { MutationCtx } from "./_generated/server";
 import { requireProfile } from "./auth";
 
+const MAX_PUBLISHED_LISTINGS_SCAN = 100;
+
 const billingSubscriptionValidator = v.object({
   _id: v.id("billingSubscriptions"),
   _creationTime: v.number(),
@@ -34,18 +36,14 @@ async function suspendExcessPublishedListings(
     .unique();
   if (!profile) return;
 
-  const published = [];
-  let cursor: string | null = null;
-  do {
-    const page = await ctx.db
-      .query("listings")
-      .withIndex("by_owner_profile_id_and_status", (q) =>
-        q.eq("ownerProfileId", profile._id).eq("status", "published"),
-      )
-      .paginate({ cursor, numItems: 100 });
-    published.push(...page.page);
-    cursor = page.continueCursor;
-  } while (cursor !== null);
+  // Publishing is capped at the Host Pro allowance, so this bound covers every published listing.
+  // (A mutation may run only one paginated query, so a paginate loop is not an option here.)
+  const published = await ctx.db
+    .query("listings")
+    .withIndex("by_owner_profile_id_and_status", (q) =>
+      q.eq("ownerProfileId", profile._id).eq("status", "published"),
+    )
+    .take(MAX_PUBLISHED_LISTINGS_SCAN);
   const allowance = publicationAllowance(subscription, now);
   if (allowance > 1) {
     await Promise.all(
