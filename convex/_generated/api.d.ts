@@ -12,6 +12,7 @@ import type * as auth from "../auth.js";
 import type * as billing from "../billing.js";
 import type * as listingSeeds from "../listingSeeds.js";
 import type * as listings from "../listings.js";
+import type * as search from "../search.js";
 import type * as users from "../users.js";
 
 import type {
@@ -25,6 +26,7 @@ declare const fullApi: ApiFromModules<{
   billing: typeof billing;
   listingSeeds: typeof listingSeeds;
   listings: typeof listings;
+  search: typeof search;
   users: typeof users;
 }>;
 
