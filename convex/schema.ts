@@ -209,7 +209,9 @@ export default defineSchema({
     .index("by_guest_profile_id_and_created_at", ["guestProfileId", "createdAt"])
     .index("by_host_profile_id_and_created_at", ["hostProfileId", "createdAt"])
     .index("by_host_profile_id_and_status_and_created_at", ["hostProfileId", "status", "createdAt"])
-    .index("by_status_and_check_out", ["status", "checkOut"]),
+    .index("by_status_and_check_out", ["status", "checkOut"])
+    .index("by_status_and_payment_hold_expires_at", ["status", "paymentHoldExpiresAt"])
+    .index("by_status_and_request_expires_at", ["status", "requestExpiresAt"]),
   reservationNights: defineTable({
     reservationId: v.id("reservations"),
     listingId: v.id("listings"),
@@ -248,7 +250,9 @@ export default defineSchema({
     resolvedByProfileId: v.optional(v.id("users")),
     resolvedAt: v.optional(v.number()),
     createdAt: v.number(),
-  }).index("by_reservation_id", ["reservationId"]),
+  })
+    .index("by_reservation_id", ["reservationId"])
+    .index("by_status_and_created_at", ["status", "createdAt"]),
   wishlists: defineTable({
     ownerProfileId: v.id("users"),
     name: v.string(),
@@ -326,7 +330,8 @@ export default defineSchema({
   })
     .index("by_reservation_id_and_reviewer_profile_id", ["reservationId", "reviewerProfileId"])
     .index("by_reservation_id", ["reservationId"])
-    .index("by_listing_id_and_kind_and_revealed_at", ["listingId", "kind", "revealedAt"]),
+    .index("by_listing_id_and_kind_and_revealed_at", ["listingId", "kind", "revealedAt"])
+    .index("by_revealed_at_and_submitted_at", ["revealedAt", "submittedAt"]),
   reviewAggregates: defineTable({
     listingId: v.id("listings"),
     count: v.number(),
@@ -349,4 +354,28 @@ export default defineSchema({
   })
     .index("by_reservation_id", ["reservationId"])
     .index("by_host_profile_id_and_paid_at", ["hostProfileId", "paidAt"]),
+  operationalEvents: defineTable({
+    dedupeKey: v.string(),
+    kind: v.union(
+      v.literal("scheduled_function_failed"),
+      v.literal("payment_operation_abandoned"),
+      v.literal("refund_failed"),
+      v.literal("refund_stalled"),
+      v.literal("late_cancellation_requested"),
+      v.literal("missed_transition_repaired"),
+    ),
+    severity: v.union(v.literal("info"), v.literal("warning"), v.literal("error")),
+    message: v.string(),
+    reservationId: v.optional(v.id("reservations")),
+    paymentOperationId: v.optional(v.id("paymentOperations")),
+    scheduledFunctionId: v.optional(v.id("_scheduled_functions")),
+    status: v.union(v.literal("open"), v.literal("resolved")),
+    resolutionNote: v.optional(v.string()),
+    resolvedBy: v.optional(v.string()),
+    createdAt: v.number(),
+    resolvedAt: v.optional(v.number()),
+  })
+    .index("by_dedupe_key", ["dedupeKey"])
+    .index("by_status_and_created_at", ["status", "createdAt"])
+    .index("by_reservation_id", ["reservationId"]),
 });

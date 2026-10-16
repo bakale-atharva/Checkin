@@ -1,6 +1,7 @@
 import { ConvexError, v } from "convex/values";
 
 import { internalMutation } from "./_generated/server";
+import { allowsSimulatorControls, parseDeploymentRole } from "../lib/operations/deployment-role";
 import { listingSearchFields } from "../lib/search/listing-search-fields";
 
 const SEED_LISTING_COUNT = 60;
@@ -29,6 +30,12 @@ export const seedListings = internalMutation({
   },
   returns: v.object({ created: v.number(), skipped: v.boolean() }),
   handler: async (ctx, args) => {
+    if (!allowsSimulatorControls(parseDeploymentRole(process.env.CHECKIN_DEPLOYMENT_ROLE))) {
+      throw new ConvexError({
+        code: "SEEDING_DISABLED",
+        message: "Seed data is limited to deployments with CHECKIN_DEPLOYMENT_ROLE set to test or demo.",
+      });
+    }
     if (args.hostProfileIds.length < 3 || args.photoStorageIds.length < SEED_LISTING_COUNT) {
       throw new ConvexError({
         code: "INVALID_SEED_INPUT",

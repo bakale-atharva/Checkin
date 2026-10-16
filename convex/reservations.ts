@@ -9,7 +9,9 @@ import {
   transitionReservation,
   type ReservationStatus,
 } from "../lib/reservations/reservation-policy";
+import { allowsSimulatorControls, parseDeploymentRole } from "../lib/operations/deployment-role";
 import { assertProfileOwner, requireProfile } from "./auth";
+import { recordOperationalEvent } from "./operations";
 import type { Doc, Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
 import { internalMutation, mutation, query } from "./_generated/server";
@@ -354,7 +356,14 @@ export const cancel = mutation({
       throw reservationError("CHECK_IN_PASSED", "Hosts can only cancel before check-in.");
     }
     if (isGuest && !isCancellationRefundEligible(checkInAt, new Date().toISOString())) {
-      await ctx.db.insert("lateCancellationRequests", { reservationId: reservation._id, guestProfileId: actor._id, reason: args.reason, status: "open", createdAt: Date.now() });
+      const supportRequestId = await ctx.db.insert("lateCancellationRequests", { reservationId: reservation._id, guestProfileId: actor._id, reason: args.reason, status: "open", createdAt: Date.now() });
+      await recordOperationalEvent(ctx, {
+        dedupeKey: `late_cancellation_requested:${supportRequestId}`,
+        kind: "late_cancellation_requested",
+        severity: "info",
+        message: "Guest requested a cancellation inside 24 hours of check-in; support review required.",
+        reservationId: reservation._id,
+      });
       return { kind: "support_required" as const };
     }
     const now = Date.now();
@@ -467,6 +476,14 @@ export const resolvePaymentOperation = internalMutation({
       await ctx.db.patch(operation._id, { status: "failed", updatedAt: now });
       await ctx.db.patch(reservation._id, { paymentStatus: "refund_failed", updatedAt: now });
       await notifyReservationParticipants(ctx, reservation, now);
+      await recordOperationalEvent(ctx, {
+        dedupeKey: `refund_failed:${operation._id}:${operation.attempts}`,
+        kind: "refund_failed",
+        severity: "error",
+        message: "Simulated refund failed; retry with reservations:retryRefund.",
+        reservationId: reservation._id,
+        paymentOperationId: operation._id,
+      });
       return true;
     }
     return false;
@@ -495,6 +512,9 @@ export const setPaymentSimulationScenario = internalMutation({
   args: { reservationId: v.id("reservations"), kind: v.union(v.literal("charge"), v.literal("refund")), outcome: paymentOutcomeValidator, delayMs: v.number() },
   returns: v.null(),
   handler: async (ctx, args) => {
+    if (!allowsSimulatorControls(parseDeploymentRole(process.env.CHECKIN_DEPLOYMENT_ROLE))) {
+      throw reservationError("SIMULATOR_DISABLED", "Payment simulation controls are limited to test and demo deployments.");
+    }
     if (!Number.isInteger(args.delayMs) || args.delayMs < 0 || args.delayMs > REQUEST_EXPIRY_MS) {
       throw reservationError("INVALID_SIMULATION", "Simulation delay must be between zero and twenty-four hours.");
     }

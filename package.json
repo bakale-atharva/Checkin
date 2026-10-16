@@ -8,7 +8,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --import tsx --test"
+    "test": "node --import tsx --test \"lib/**/*.test.ts\"",
+    "test:integration": "node --env-file-if-exists=.env.test.local --import tsx --test --test-concurrency=1 \"convex/**/*.integration.test.ts\"",
+    "test:integration:deploy": "node --env-file=.env.test.local node_modules/convex/bin/main.js deploy -y"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.9.11",

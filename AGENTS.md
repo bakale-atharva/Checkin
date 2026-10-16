@@ -40,7 +40,7 @@ This file gives Claude Code the context it needs to work in this repo. Keep it s
 - **Install:** `pnpm i`
 - **Dev / run:** `(Frontend) pnpm run frontend, (Backend) pnpm run backend`
 - **Build:** `pnpm run build`
-- **Test:** `pnpm test` (not wired up yet — added in phase B1, see Testing below)
+- **Test:** `pnpm test` (unit), `pnpm test:integration:deploy` then `pnpm test:integration` (dedicated Convex test deployment) — see Testing below
 - **Lint / format:** `pnpm run lint`
 
 ## Testing — No Vitest
@@ -50,7 +50,7 @@ This file gives Claude Code the context it needs to work in this repo. Keep it s
 Use instead:
 
 - `pnpm test` — Node's built-in test runner (`node --test`) with TypeScript via `tsx`, for isolated logic (pricing, dates, policies).
-- `pnpm test:integration` — Node-runner tests against a **dedicated Convex test deployment**. Must fail early if no test target is configured; never fall back to production.
+- `pnpm test:integration` — Node-runner tests (`convex/*.integration.test.ts`) against the **dedicated `dev/integration-tests` Convex deployment**, configured in the gitignored `.env.test.local`. Fails early if no test target is configured; never falls back to production. Setup, targeting, support overrides, and schema-evolution steps live in `docs/backend-operations.md`.
 - `pnpm test:e2e` — Playwright browser journeys, responsive and accessibility checks.
 
 ### Test placement
