@@ -58,6 +58,9 @@ export default defineSchema({
     cleaningFeeCents: v.number(),
     currency: v.literal("USD"),
     bookingMode: v.union(v.literal("instant"), v.literal("request")),
+    searchCity: v.optional(v.string()),
+    searchCountryCode: v.optional(v.string()),
+    publishedRating: v.optional(v.number()),
     seedKey: v.optional(v.string()),
     coverPhotoId: v.optional(v.id("listingPhotos")),
     publishedAt: v.optional(v.number()),
@@ -69,6 +72,7 @@ export default defineSchema({
     .index("by_owner_profile_id", ["ownerProfileId"])
     .index("by_owner_profile_id_and_status", ["ownerProfileId", "status"])
     .index("by_status", ["status"])
+    .index("by_status_and_search_city", ["status", "searchCity"])
     .index("by_status_and_created_at", ["status", "createdAt"])
     .index("by_seed_key", ["seedKey"]),
   listingPhotos: defineTable({
@@ -119,4 +123,9 @@ export default defineSchema({
     clerkEventId: v.string(),
     receivedAt: v.number(),
   }).index("by_clerk_event_id", ["clerkEventId"]),
+  searchSnapshots: defineTable({
+    listingIds: v.array(v.id("listings")),
+    expiresAt: v.number(),
+    createdAt: v.number(),
+  }).index("by_expires_at", ["expiresAt"]),
 });
