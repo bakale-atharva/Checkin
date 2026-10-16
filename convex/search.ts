@@ -98,13 +98,21 @@ async function unavailableListingIds(
   if (!checkIn || !checkOut) return new Set<string>();
   const blocked = await Promise.all(
     listings.map(async (listing) => {
-      const matches = await ctx.db
-        .query("blockedDates")
-        .withIndex("by_listing_id_and_date", (q) =>
-          q.eq("listingId", listing._id).gte("date", checkIn).lt("date", checkOut),
-        )
-        .take(1);
-      return matches.length > 0 ? String(listing._id) : null;
+      const [blocked, reserved] = await Promise.all([
+        ctx.db
+          .query("blockedDates")
+          .withIndex("by_listing_id_and_date", (q) =>
+            q.eq("listingId", listing._id).gte("date", checkIn).lt("date", checkOut),
+          )
+          .take(1),
+        ctx.db
+          .query("reservationNights")
+          .withIndex("by_listing_id_and_date", (q) =>
+            q.eq("listingId", listing._id).gte("date", checkIn).lt("date", checkOut),
+          )
+          .take(1),
+      ]);
+      return blocked.length > 0 || reserved.length > 0 ? String(listing._id) : null;
     }),
   );
   return new Set(blocked.filter((listingId): listingId is string => listingId !== null));

@@ -151,4 +151,101 @@ export default defineSchema({
     bookingMode: v.union(v.literal("instant"), v.literal("request")),
     coverPhotoId: v.optional(v.id("listingPhotos")),
   }).index("by_snapshot_id_and_position", ["snapshotId", "position"]),
+  reservationQuotes: defineTable({
+    listingId: v.id("listings"),
+    guestProfileId: v.id("users"),
+    checkIn: v.string(),
+    checkOut: v.string(),
+    guests: v.number(),
+    expiresAt: v.number(),
+    quote: v.object({
+      nightlyCharges: v.array(v.object({ date: v.string(), amountCents: v.number() })),
+      accommodationCents: v.number(),
+      cleaningFeeCents: v.number(),
+      serviceFeeCents: v.number(),
+      taxCents: v.number(),
+      totalCents: v.number(),
+      hostProceedsCents: v.number(),
+      checkInAt: v.string(),
+      checkOutAt: v.string(),
+      cancellationDeadline: v.string(),
+    }),
+    createdAt: v.number(),
+  })
+    .index("by_guest_profile_id_and_expires_at", ["guestProfileId", "expiresAt"])
+    .index("by_expires_at", ["expiresAt"]),
+  reservations: defineTable({
+    listingId: v.id("listings"),
+    guestProfileId: v.id("users"),
+    hostProfileId: v.id("users"),
+    quoteId: v.id("reservationQuotes"),
+    idempotencyKey: v.string(),
+    checkIn: v.string(),
+    checkOut: v.string(),
+    guests: v.number(),
+    bookingMode: v.union(v.literal("instant"), v.literal("request")),
+    status: v.union(
+      v.literal("pending"), v.literal("confirmed"), v.literal("cancelled"),
+      v.literal("completed"), v.literal("declined"), v.literal("expired"),
+    ),
+    paymentStatus: v.union(
+      v.literal("not_required"), v.literal("hold"), v.literal("paid"),
+      v.literal("declined"), v.literal("refunded"), v.literal("refund_failed"),
+    ),
+    paymentHoldExpiresAt: v.optional(v.number()),
+    requestExpiresAt: v.optional(v.number()),
+    checkInAt: v.string(),
+    checkOutAt: v.string(),
+    cancellationDeadline: v.string(),
+    quote: v.object({
+      nightlyCharges: v.array(v.object({ date: v.string(), amountCents: v.number() })),
+      accommodationCents: v.number(), cleaningFeeCents: v.number(), serviceFeeCents: v.number(),
+      taxCents: v.number(), totalCents: v.number(), hostProceedsCents: v.number(),
+    }),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_guest_profile_id_and_idempotency_key", ["guestProfileId", "idempotencyKey"])
+    .index("by_guest_profile_id_and_created_at", ["guestProfileId", "createdAt"])
+    .index("by_host_profile_id_and_created_at", ["hostProfileId", "createdAt"])
+    .index("by_status_and_check_out", ["status", "checkOut"]),
+  reservationNights: defineTable({
+    reservationId: v.id("reservations"),
+    listingId: v.id("listings"),
+    date: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_listing_id_and_date", ["listingId", "date"])
+    .index("by_reservation_id", ["reservationId"]),
+  paymentOperations: defineTable({
+    reservationId: v.id("reservations"),
+    kind: v.union(v.literal("charge"), v.literal("refund")),
+    idempotencyKey: v.string(),
+    amountCents: v.number(),
+    status: v.union(v.literal("pending"), v.literal("succeeded"), v.literal("declined"), v.literal("failed")),
+    attempts: v.number(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_reservation_id", ["reservationId"])
+    .index("by_reservation_id_and_idempotency_key", ["reservationId", "idempotencyKey"])
+    .index("by_status_and_updated_at", ["status", "updatedAt"]),
+  paymentSimulationScenarios: defineTable({
+    reservationId: v.id("reservations"),
+    kind: v.union(v.literal("charge"), v.literal("refund")),
+    outcome: v.union(v.literal("success"), v.literal("decline"), v.literal("delay"), v.literal("refund_failure")),
+    delayMs: v.number(),
+    updatedAt: v.number(),
+  }).index("by_reservation_id_and_kind", ["reservationId", "kind"]),
+  lateCancellationRequests: defineTable({
+    reservationId: v.id("reservations"),
+    guestProfileId: v.id("users"),
+    reason: v.string(),
+    status: v.union(v.literal("open"), v.literal("resolved")),
+    resolution: v.optional(v.union(v.literal("refund_approved"), v.literal("declined"))),
+    resolutionNote: v.optional(v.string()),
+    resolvedByProfileId: v.optional(v.id("users")),
+    resolvedAt: v.optional(v.number()),
+    createdAt: v.number(),
+  }).index("by_reservation_id", ["reservationId"]),
 });
