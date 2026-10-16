@@ -10,6 +10,7 @@
 
 import type * as auth from "../auth.js";
 import type * as billing from "../billing.js";
+import type * as dashboard from "../dashboard.js";
 import type * as listingSeeds from "../listingSeeds.js";
 import type * as listings from "../listings.js";
 import type * as reservations from "../reservations.js";
@@ -25,6 +26,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   billing: typeof billing;
+  dashboard: typeof dashboard;
   listingSeeds: typeof listingSeeds;
   listings: typeof listings;
   reservations: typeof reservations;
