@@ -11,6 +11,7 @@ import {
   assertListingStatusTransition,
   isValidStayDate,
 } from "../lib/listings/listing-policy";
+import { publicationAllowance } from "../lib/billing/host-plan-policy";
 import { assertProfileOwner, requireProfile } from "./auth";
 import type { Id } from "./_generated/dataModel";
 import { internalMutation, mutation, query } from "./_generated/server";
@@ -74,6 +75,7 @@ const listingValidator = v.object({
   coverPhotoId: v.optional(v.id("listingPhotos")),
   publishedAt: v.optional(v.number()),
   archivedAt: v.optional(v.number()),
+  bookingSuspended: v.optional(v.boolean()),
   createdAt: v.number(),
   updatedAt: v.number(),
 });
@@ -234,7 +236,7 @@ export const setStatus = mutation({
   args: { listingId: v.id("listings"), status: listingStatusValidator },
   returns: listingValidator,
   handler: async (ctx, args) => {
-    const { listing } = await getOwnedListing(ctx, args.listingId);
+    const { listing, profile } = await getOwnedListing(ctx, args.listingId);
     assertPolicy(() => assertListingStatusTransition(listing.status, args.status));
 
     if (args.status === "published") {
@@ -246,6 +248,28 @@ export const setStatus = mutation({
       if (photos.length === 0) {
         throw new ConvexError(listingError(ListingErrorCode.InvalidState));
       }
+      const [subscriptions, publishedListings] = await Promise.all([
+        ctx.db
+          .query("billingSubscriptions")
+          .withIndex("by_clerk_user_id_and_updated_at", (q) =>
+            q.eq("clerkUserId", profile.clerkUserId),
+          )
+          .order("desc")
+          .take(10),
+        ctx.db
+          .query("listings")
+          .withIndex("by_owner_profile_id_and_status", (q) =>
+            q.eq("ownerProfileId", profile._id).eq("status", "published"),
+          )
+          .take(10),
+      ]);
+      const allowance = Math.max(
+        ...subscriptions.map((subscription) => publicationAllowance(subscription, Date.now())),
+        1,
+      );
+      if (publishedListings.length >= allowance) {
+        throw new ConvexError(listingError(ListingErrorCode.InvalidState));
+      }
     }
 
     const now = Date.now();
@@ -254,6 +278,7 @@ export const setStatus = mutation({
       updatedAt: now,
       ...(args.status === "published" ? { publishedAt: now } : {}),
       ...(args.status === "archived" ? { archivedAt: now } : {}),
+      ...(args.status === "published" ? { bookingSuspended: false } : {}),
     };
     await ctx.db.patch(listing._id, fields);
     return { ...listing, ...fields };
@@ -564,7 +589,7 @@ export const getPublished = query({
   returns: v.union(publicListingValidator, v.null()),
   handler: async (ctx, args) => {
     const listing = await ctx.db.get(args.listingId);
-    if (!listing || listing.status !== "published") return null;
+    if (!listing || listing.status !== "published" || listing.bookingSuspended) return null;
     const photos = await ctx.db
       .query("listingPhotos")
       .withIndex("by_listing_id_and_position", (q) => q.eq("listingId", listing._id))
