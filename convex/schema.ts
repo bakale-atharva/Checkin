@@ -8,10 +8,12 @@ export default defineSchema({
     email: v.optional(v.string()),
     name: v.optional(v.string()),
     imageUrl: v.optional(v.string()),
+    selectedFreeListingId: v.optional(v.id("listings")),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
     .index("by_token_identifier", ["tokenIdentifier"])
+    .index("by_clerk_user_id", ["clerkUserId"])
     .index("by_created_at", ["createdAt"]),
   listings: defineTable({
     ownerProfileId: v.id("users"),
@@ -60,10 +62,12 @@ export default defineSchema({
     coverPhotoId: v.optional(v.id("listingPhotos")),
     publishedAt: v.optional(v.number()),
     archivedAt: v.optional(v.number()),
+    bookingSuspended: v.optional(v.boolean()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
     .index("by_owner_profile_id", ["ownerProfileId"])
+    .index("by_owner_profile_id_and_status", ["ownerProfileId", "status"])
     .index("by_status", ["status"])
     .index("by_status_and_created_at", ["status", "createdAt"])
     .index("by_seed_key", ["seedKey"]),
@@ -100,4 +104,19 @@ export default defineSchema({
   })
     .index("by_listing_id", ["listingId"])
     .index("by_listing_id_and_date", ["listingId", "date"]),
+  billingSubscriptions: defineTable({
+    clerkSubscriptionId: v.string(),
+    clerkUserId: v.string(),
+    planSlug: v.string(),
+    status: v.string(),
+    effectiveUntil: v.union(v.number(), v.null()),
+    lastEventAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_clerk_subscription_id", ["clerkSubscriptionId"])
+    .index("by_clerk_user_id_and_updated_at", ["clerkUserId", "updatedAt"]),
+  billingWebhookEvents: defineTable({
+    clerkEventId: v.string(),
+    receivedAt: v.number(),
+  }).index("by_clerk_event_id", ["clerkEventId"]),
 });
