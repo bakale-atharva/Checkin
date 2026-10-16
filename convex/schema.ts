@@ -208,6 +208,7 @@ export default defineSchema({
     .index("by_guest_profile_id_and_idempotency_key", ["guestProfileId", "idempotencyKey"])
     .index("by_guest_profile_id_and_created_at", ["guestProfileId", "createdAt"])
     .index("by_host_profile_id_and_created_at", ["hostProfileId", "createdAt"])
+    .index("by_host_profile_id_and_status_and_created_at", ["hostProfileId", "status", "createdAt"])
     .index("by_status_and_check_out", ["status", "checkOut"]),
   reservationNights: defineTable({
     reservationId: v.id("reservations"),
@@ -248,4 +249,104 @@ export default defineSchema({
     resolvedAt: v.optional(v.number()),
     createdAt: v.number(),
   }).index("by_reservation_id", ["reservationId"]),
+  wishlists: defineTable({
+    ownerProfileId: v.id("users"),
+    name: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("by_owner_profile_id_and_updated_at", ["ownerProfileId", "updatedAt"]),
+  wishlistItems: defineTable({
+    wishlistId: v.id("wishlists"),
+    listingId: v.id("listings"),
+    createdAt: v.number(),
+  })
+    .index("by_wishlist_id_and_created_at", ["wishlistId", "createdAt"])
+    .index("by_wishlist_id_and_listing_id", ["wishlistId", "listingId"]),
+  conversations: defineTable({
+    reservationId: v.id("reservations"),
+    guestProfileId: v.id("users"),
+    hostProfileId: v.id("users"),
+    latestMessageAt: v.optional(v.number()),
+    createdAt: v.number(),
+  }).index("by_reservation_id", ["reservationId"]),
+  conversationParticipants: defineTable({
+    conversationId: v.id("conversations"),
+    profileId: v.id("users"),
+    lastReadAt: v.optional(v.number()),
+    updatedAt: v.number(),
+  })
+    .index("by_conversation_id_and_profile_id", ["conversationId", "profileId"])
+    .index("by_profile_id_and_updated_at", ["profileId", "updatedAt"]),
+  messages: defineTable({
+    conversationId: v.id("conversations"),
+    senderProfileId: v.id("users"),
+    body: v.string(),
+    createdAt: v.number(),
+  }).index("by_conversation_id_and_created_at", ["conversationId", "createdAt"]),
+  messageRateLimits: defineTable({
+    profileId: v.id("users"),
+    windowStartedAt: v.number(),
+    sentCount: v.number(),
+  }).index("by_profile_id", ["profileId"]),
+  notifications: defineTable({
+    profileId: v.id("users"),
+    kind: v.union(
+      v.literal("reservation_action"),
+      v.literal("review_eligible"),
+      v.literal("message"),
+    ),
+    reservationId: v.optional(v.id("reservations")),
+    conversationId: v.optional(v.id("conversations")),
+    readAt: v.optional(v.number()),
+    createdAt: v.number(),
+  }).index("by_profile_id_and_created_at", ["profileId", "createdAt"]),
+  reviews: defineTable({
+    reservationId: v.id("reservations"),
+    listingId: v.id("listings"),
+    reviewerProfileId: v.id("users"),
+    recipientProfileId: v.id("users"),
+    kind: v.union(v.literal("guest_to_host"), v.literal("host_to_guest")),
+    guestRatings: v.optional(v.object({
+      overall: v.number(),
+      cleanliness: v.number(),
+      accuracy: v.number(),
+      checkIn: v.number(),
+      communication: v.number(),
+      location: v.number(),
+      value: v.number(),
+    })),
+    hostRatings: v.optional(v.object({
+      communication: v.number(),
+      cleanliness: v.number(),
+      ruleObservance: v.number(),
+    })),
+    comment: v.optional(v.string()),
+    submittedAt: v.number(),
+    revealedAt: v.optional(v.number()),
+  })
+    .index("by_reservation_id_and_reviewer_profile_id", ["reservationId", "reviewerProfileId"])
+    .index("by_reservation_id", ["reservationId"])
+    .index("by_listing_id_and_kind_and_revealed_at", ["listingId", "kind", "revealedAt"]),
+  reviewAggregates: defineTable({
+    listingId: v.id("listings"),
+    count: v.number(),
+    overallTotal: v.number(),
+    cleanlinessTotal: v.number(),
+    accuracyTotal: v.number(),
+    checkInTotal: v.number(),
+    communicationTotal: v.number(),
+    locationTotal: v.number(),
+    valueTotal: v.number(),
+    updatedAt: v.number(),
+  }).index("by_listing_id", ["listingId"]),
+  simulatedPayouts: defineTable({
+    reservationId: v.id("reservations"),
+    hostProfileId: v.id("users"),
+    amountCents: v.number(),
+    status: v.literal("paid"),
+    paidAt: v.number(),
+    createdAt: v.number(),
+  })
+    .index("by_reservation_id", ["reservationId"])
+    .index("by_host_profile_id_and_paid_at", ["hostProfileId", "paidAt"]),
 });

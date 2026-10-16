@@ -18,6 +18,7 @@ import type { MutationCtx, QueryCtx } from "./_generated/server";
 const QUOTE_TTL_MS = 15 * 60 * 1000;
 const INSTANT_PAYMENT_HOLD_MS = 15 * 60 * 1000;
 const REQUEST_EXPIRY_MS = 24 * 60 * 60 * 1000;
+const REVIEW_WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
 
 const reservationStatusValidator = v.union(
   v.literal("pending"), v.literal("confirmed"), v.literal("cancelled"),
@@ -125,6 +126,23 @@ async function releaseInventory(ctx: MutationCtx, reservationId: Id<"reservation
   await Promise.all(nights.map((night) => ctx.db.delete(night._id)));
 }
 
+async function notifyReservationParticipants(
+  ctx: MutationCtx,
+  reservation: Doc<"reservations">,
+  now: number,
+  kind: "reservation_action" | "review_eligible" = "reservation_action",
+  excludeProfileId?: Id<"users">,
+) {
+  const recipients = [...new Set([reservation.guestProfileId, reservation.hostProfileId])]
+    .filter((profileId) => profileId !== excludeProfileId);
+  await Promise.all(recipients.map((profileId) => ctx.db.insert("notifications", {
+    profileId,
+    kind,
+    reservationId: reservation._id,
+    createdAt: now,
+  })));
+}
+
 async function schedulePaymentResolution(
   ctx: MutationCtx,
   operation: Doc<"paymentOperations">,
@@ -161,6 +179,7 @@ async function expireReservation(
     updatedAt: Date.now(),
   });
   await releaseInventory(ctx, reservation._id);
+  await notifyReservationParticipants(ctx, reservation, Date.now());
   return true;
 }
 
@@ -249,6 +268,12 @@ export const createFromQuote = mutation({
       await ctx.scheduler.runAfter(requestExpiresAt! - now, internal.reservations.expireRequest, {
         reservationId, expiresAt: requestExpiresAt!,
       });
+      await ctx.db.insert("notifications", {
+        profileId: listing.ownerProfileId,
+        kind: "reservation_action",
+        reservationId,
+        createdAt: now,
+      });
     }
     const reservation = await ctx.db.get(reservationId);
     if (!reservation) throw new Error("Reservation creation failed unexpectedly.");
@@ -267,7 +292,9 @@ export const respondToRequest = mutation({
       throw reservationError("INVALID_STATE", "This request cannot be updated.");
     }
     if (!args.accept) {
-      await ctx.db.patch(reservation._id, { status: transitionReservation("pending", "declined"), updatedAt: Date.now() });
+      const now = Date.now();
+      await ctx.db.patch(reservation._id, { status: transitionReservation("pending", "declined"), updatedAt: now });
+      await notifyReservationParticipants(ctx, reservation, now, "reservation_action", host._id);
     } else {
       const now = Date.now();
       const expiresAt = Math.min(now + REQUEST_EXPIRY_MS, checkInTimestamp(reservation));
@@ -275,6 +302,7 @@ export const respondToRequest = mutation({
       await reserveInventory(ctx, reservation._id, reservation.listingId, reservation.checkIn, reservation.checkOut);
       await ctx.db.patch(reservation._id, { paymentStatus: "hold", paymentHoldExpiresAt: expiresAt, requestExpiresAt: undefined, updatedAt: now });
       await ctx.scheduler.runAfter(expiresAt - now, internal.reservations.expirePaymentHold, { reservationId: reservation._id, expiresAt });
+      await notifyReservationParticipants(ctx, reservation, now, "reservation_action", host._id);
     }
     const updated = await ctx.db.get(reservation._id);
     if (!updated) throw new Error("Reservation update failed unexpectedly.");
@@ -332,6 +360,7 @@ export const cancel = mutation({
     const now = Date.now();
     await ctx.db.patch(reservation._id, { status: transitionReservation(reservation.status as ReservationStatus, "cancelled"), updatedAt: now });
     await releaseInventory(ctx, reservation._id);
+    await notifyReservationParticipants(ctx, reservation, now, "reservation_action", actor._id);
     if (reservation.paymentStatus === "paid") {
       const key = `refund:${reservation._id}`;
       const existingRefund = await ctx.db.query("paymentOperations").withIndex("by_reservation_id_and_idempotency_key", (q) => q.eq("reservationId", reservation._id).eq("idempotencyKey", key)).unique();
@@ -414,6 +443,7 @@ export const resolvePaymentOperation = internalMutation({
       if (args.outcome === "success" && reservation.status === "pending" && reservation.paymentStatus === "hold" && (reservation.paymentHoldExpiresAt ?? 0) > now) {
         await ctx.db.patch(operation._id, { status: "succeeded", updatedAt: now });
         await ctx.db.patch(reservation._id, { status: transitionReservation("pending", "confirmed"), paymentStatus: "paid", updatedAt: now });
+        await notifyReservationParticipants(ctx, reservation, now);
         const completionDelay = Math.max(0, Date.parse(reservation.checkOutAt) - now);
         await ctx.scheduler.runAfter(completionDelay, internal.reservations.markCompleted, { reservationId: reservation._id });
         return true;
@@ -422,6 +452,7 @@ export const resolvePaymentOperation = internalMutation({
         await ctx.db.patch(operation._id, { status: "declined", updatedAt: now });
         await ctx.db.patch(reservation._id, { status: "expired", paymentStatus: "declined", updatedAt: now });
         await releaseInventory(ctx, reservation._id);
+        await notifyReservationParticipants(ctx, reservation, now);
         return true;
       }
       return false;
@@ -429,11 +460,13 @@ export const resolvePaymentOperation = internalMutation({
     if (args.outcome === "success") {
       await ctx.db.patch(operation._id, { status: "succeeded", updatedAt: now });
       await ctx.db.patch(reservation._id, { paymentStatus: "refunded", updatedAt: now });
+      await notifyReservationParticipants(ctx, reservation, now);
       return true;
     }
     if (args.outcome === "refund_failure") {
       await ctx.db.patch(operation._id, { status: "failed", updatedAt: now });
       await ctx.db.patch(reservation._id, { paymentStatus: "refund_failed", updatedAt: now });
+      await notifyReservationParticipants(ctx, reservation, now);
       return true;
     }
     return false;
@@ -489,7 +522,25 @@ export const markCompleted = internalMutation({
   handler: async (ctx, args) => {
     const reservation = await ctx.db.get(args.reservationId);
     if (!reservation || reservation.status !== "confirmed" || Date.parse(reservation.checkOutAt) > Date.now()) return false;
-    await ctx.db.patch(reservation._id, { status: "completed", updatedAt: Date.now() });
+    const now = Date.now();
+    await ctx.db.patch(reservation._id, { status: "completed", updatedAt: now });
+    const existingPayout = await ctx.db.query("simulatedPayouts")
+      .withIndex("by_reservation_id", (q) => q.eq("reservationId", reservation._id))
+      .unique();
+    if (!existingPayout) {
+      await ctx.db.insert("simulatedPayouts", {
+        reservationId: reservation._id,
+        hostProfileId: reservation.hostProfileId,
+        amountCents: reservation.quote.hostProceedsCents,
+        status: "paid",
+        paidAt: now,
+        createdAt: now,
+      });
+    }
+    await notifyReservationParticipants(ctx, reservation, now, "review_eligible");
+    await ctx.scheduler.runAfter(REVIEW_WINDOW_MS, internal.dashboard.revealReviewsAfterDeadline, {
+      reservationId: reservation._id,
+    });
     return true;
   },
 });
