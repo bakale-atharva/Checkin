@@ -10,14 +10,20 @@
     "lint": "eslint",
     "test": "node --import tsx --test \"lib/**/*.test.ts\"",
     "test:integration": "node --env-file-if-exists=.env.test.local --import tsx --test --test-concurrency=1 \"convex/**/*.integration.test.ts\"",
-    "test:integration:deploy": "node --env-file=.env.test.local node_modules/convex/bin/main.js deploy -y"
+    "test:integration:deploy": "node --env-file=.env.test.local node_modules/convex/bin/main.js deploy -y",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "@clerk/nextjs": "^7.9.11",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "convex": "^1.46.0",
+    "lucide-react": "^1.57.0",
     "next": "16.3.8",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "tailwind-merge": "^3.7.0"
   },
   "devDependencies": {
     "@eslint/compat": "^2.1.1",
@@ -27,6 +33,8 @@
     "@types/react-dom": "^19",
     "eslint": "10.12.0",
     "eslint-config-next": "16.3.8",
+    "prettier": "^3.9.10",
+    "shadcn": "^4.21.5",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
     "typescript": "^5"

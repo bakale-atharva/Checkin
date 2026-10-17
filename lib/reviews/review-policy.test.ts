@@ -54,9 +54,29 @@ test("accepts only whole-number ratings from one through five", () => {
 });
 
 test("requires every role-specific rating category", () => {
-  const guest = { overall: 5, cleanliness: 4, accuracy: 5, checkIn: 5, communication: 5, location: 4, value: 4 };
+  const guest = {
+    overall: 5,
+    cleanliness: 4,
+    accuracy: 5,
+    checkIn: 5,
+    communication: 5,
+    location: 4,
+    value: 4,
+  };
   assert.equal(areValidRatings(guest, GUEST_RATING_KEYS), true);
-  assert.equal(areValidRatings({ ...guest, value: 0 }, GUEST_RATING_KEYS), false);
-  assert.equal(areValidRatings({ communication: 5, cleanliness: 5 }, HOST_RATING_KEYS), false);
-  assert.equal(areValidRatings({ communication: 5, cleanliness: 5, ruleObservance: 3 }, HOST_RATING_KEYS), true);
+  assert.equal(
+    areValidRatings({ ...guest, value: 0 }, GUEST_RATING_KEYS),
+    false,
+  );
+  assert.equal(
+    areValidRatings({ communication: 5, cleanliness: 5 }, HOST_RATING_KEYS),
+    false,
+  );
+  assert.equal(
+    areValidRatings(
+      { communication: 5, cleanliness: 5, ruleObservance: 3 },
+      HOST_RATING_KEYS,
+    ),
+    true,
+  );
 });

@@ -1,9 +1,6 @@
 import { ConvexError, v } from "convex/values";
 
-import {
-  ListingErrorCode,
-  listingError,
-} from "../lib/listings/listing-errors";
+import { ListingErrorCode, listingError } from "../lib/listings/listing-errors";
 import {
   ListingPolicyError,
   assertListingCanBeDeleted,
@@ -27,7 +24,10 @@ const propertyTypeValidator = v.union(
   v.literal("private_room"),
   v.literal("shared_room"),
 );
-const bookingModeValidator = v.union(v.literal("instant"), v.literal("request"));
+const bookingModeValidator = v.union(
+  v.literal("instant"),
+  v.literal("request"),
+);
 const listingStatusValidator = v.union(
   v.literal("draft"),
   v.literal("published"),
@@ -234,7 +234,11 @@ export const update = mutation({
     const searchFields = args.fields.publicLocation
       ? listingSearchFields(args.fields.publicLocation)
       : {};
-    await ctx.db.patch(listing._id, { ...args.fields, ...searchFields, updatedAt });
+    await ctx.db.patch(listing._id, {
+      ...args.fields,
+      ...searchFields,
+      updatedAt,
+    });
     return { ...listing, ...args.fields, ...searchFields, updatedAt };
   },
 });
@@ -244,13 +248,17 @@ export const setStatus = mutation({
   returns: listingValidator,
   handler: async (ctx, args) => {
     const { listing, profile } = await getOwnedListing(ctx, args.listingId);
-    assertPolicy(() => assertListingStatusTransition(listing.status, args.status));
+    assertPolicy(() =>
+      assertListingStatusTransition(listing.status, args.status),
+    );
 
     if (args.status === "published") {
       assertPolicy(() => assertListingCanBePublished(listing));
       const photos = await ctx.db
         .query("listingPhotos")
-        .withIndex("by_listing_id_and_position", (q) => q.eq("listingId", listing._id))
+        .withIndex("by_listing_id_and_position", (q) =>
+          q.eq("listingId", listing._id),
+        )
         .take(1);
       if (photos.length === 0) {
         throw new ConvexError(listingError(ListingErrorCode.InvalidState));
@@ -271,7 +279,9 @@ export const setStatus = mutation({
           .take(10),
       ]);
       const allowance = Math.max(
-        ...subscriptions.map((subscription) => publicationAllowance(subscription, Date.now())),
+        ...subscriptions.map((subscription) =>
+          publicationAllowance(subscription, Date.now()),
+        ),
         1,
       );
       if (publishedListings.length >= allowance) {
@@ -300,12 +310,16 @@ export const deleteDraft = mutation({
   returns: v.null(),
   handler: async (ctx, args) => {
     const { listing } = await getOwnedListing(ctx, args.listingId);
-    assertPolicy(() => assertListingCanBeDeleted(listing.status, Boolean(listing.publishedAt)));
+    assertPolicy(() =>
+      assertListingCanBeDeleted(listing.status, Boolean(listing.publishedAt)),
+    );
 
     const [photos, uploads, blockedDates, overrides] = await Promise.all([
       ctx.db
         .query("listingPhotos")
-        .withIndex("by_listing_id_and_position", (q) => q.eq("listingId", listing._id))
+        .withIndex("by_listing_id_and_position", (q) =>
+          q.eq("listingId", listing._id),
+        )
         .take(MAX_LISTING_PHOTOS + 1),
       ctx.db
         .query("pendingListingPhotoUploads")
@@ -391,7 +405,9 @@ export const attachPhoto = mutation({
     }
     const photos = await ctx.db
       .query("listingPhotos")
-      .withIndex("by_listing_id_and_position", (q) => q.eq("listingId", listing._id))
+      .withIndex("by_listing_id_and_position", (q) =>
+        q.eq("listingId", listing._id),
+      )
       .take(MAX_LISTING_PHOTOS + 1);
     if (photos.length >= MAX_LISTING_PHOTOS) {
       throw new ConvexError(listingError(ListingErrorCode.InvalidPhoto));
@@ -406,7 +422,10 @@ export const attachPhoto = mutation({
     });
     await ctx.db.delete(upload._id);
     if (!listing.coverPhotoId) {
-      await ctx.db.patch(listing._id, { coverPhotoId: photoId, updatedAt: createdAt });
+      await ctx.db.patch(listing._id, {
+        coverPhotoId: photoId,
+        updatedAt: createdAt,
+      });
     }
     const photo = await ctx.db.get(photoId);
     if (!photo) {
@@ -430,7 +449,9 @@ export const removePhoto = mutation({
     if (listing.coverPhotoId === photo._id) {
       const [nextPhoto] = await ctx.db
         .query("listingPhotos")
-        .withIndex("by_listing_id_and_position", (q) => q.eq("listingId", listing._id))
+        .withIndex("by_listing_id_and_position", (q) =>
+          q.eq("listingId", listing._id),
+        )
         .take(1);
       if (nextPhoto) {
         await ctx.db.patch(listing._id, {
@@ -449,16 +470,24 @@ export const removePhoto = mutation({
 });
 
 export const setPhotoOrder = mutation({
-  args: { listingId: v.id("listings"), photoIds: v.array(v.id("listingPhotos")) },
+  args: {
+    listingId: v.id("listings"),
+    photoIds: v.array(v.id("listingPhotos")),
+  },
   returns: v.null(),
   handler: async (ctx, args) => {
     const { listing } = await getOwnedListing(ctx, args.listingId);
-    if (args.photoIds.length > MAX_LISTING_PHOTOS || new Set(args.photoIds).size !== args.photoIds.length) {
+    if (
+      args.photoIds.length > MAX_LISTING_PHOTOS ||
+      new Set(args.photoIds).size !== args.photoIds.length
+    ) {
       throw new ConvexError(listingError(ListingErrorCode.InvalidPhoto));
     }
     const existing = await ctx.db
       .query("listingPhotos")
-      .withIndex("by_listing_id_and_position", (q) => q.eq("listingId", listing._id))
+      .withIndex("by_listing_id_and_position", (q) =>
+        q.eq("listingId", listing._id),
+      )
       .take(MAX_LISTING_PHOTOS + 1);
     if (
       existing.length !== args.photoIds.length ||
@@ -466,7 +495,11 @@ export const setPhotoOrder = mutation({
     ) {
       throw new ConvexError(listingError(ListingErrorCode.InvalidPhoto));
     }
-    await Promise.all(args.photoIds.map((photoId, position) => ctx.db.patch(photoId, { position })));
+    await Promise.all(
+      args.photoIds.map((photoId, position) =>
+        ctx.db.patch(photoId, { position }),
+      ),
+    );
     return null;
   },
 });
@@ -518,7 +551,8 @@ export const setNightlyPriceOverride = mutation({
     if (
       !isValidStayDate(args.date) ||
       (args.nightlyPriceCents !== null &&
-        (!Number.isInteger(args.nightlyPriceCents) || args.nightlyPriceCents < 1))
+        (!Number.isInteger(args.nightlyPriceCents) ||
+          args.nightlyPriceCents < 1))
     ) {
       throwInvalidInput();
     }
@@ -534,7 +568,10 @@ export const setNightlyPriceOverride = mutation({
     }
     const now = Date.now();
     if (existing) {
-      await ctx.db.patch(existing._id, { nightlyPriceCents: args.nightlyPriceCents, updatedAt: now });
+      await ctx.db.patch(existing._id, {
+        nightlyPriceCents: args.nightlyPriceCents,
+        updatedAt: now,
+      });
       return null;
     }
     const overrides = await ctx.db
@@ -560,7 +597,9 @@ export const myListings = query({
     const profile = await requireProfile(ctx);
     return await ctx.db
       .query("listings")
-      .withIndex("by_owner_profile_id", (q) => q.eq("ownerProfileId", profile._id))
+      .withIndex("by_owner_profile_id", (q) =>
+        q.eq("ownerProfileId", profile._id),
+      )
       .order("desc")
       .take(100);
   },
@@ -586,12 +625,14 @@ const publicListingValidator = v.object({
   cleaningFeeCents: v.number(),
   currency: v.literal("USD"),
   bookingMode: bookingModeValidator,
-  photos: v.array(v.object({
-    _id: v.id("listingPhotos"),
-    url: v.union(v.string(), v.null()),
-    altText: v.optional(v.string()),
-    position: v.number(),
-  })),
+  photos: v.array(
+    v.object({
+      _id: v.id("listingPhotos"),
+      url: v.union(v.string(), v.null()),
+      altText: v.optional(v.string()),
+      position: v.number(),
+    }),
+  ),
 });
 
 export const getPublished = query({
@@ -599,10 +640,13 @@ export const getPublished = query({
   returns: v.union(publicListingValidator, v.null()),
   handler: async (ctx, args) => {
     const listing = await ctx.db.get(args.listingId);
-    if (!listing || listing.status !== "published" || listing.bookingSuspended) return null;
+    if (!listing || listing.status !== "published" || listing.bookingSuspended)
+      return null;
     const photos = await ctx.db
       .query("listingPhotos")
-      .withIndex("by_listing_id_and_position", (q) => q.eq("listingId", listing._id))
+      .withIndex("by_listing_id_and_position", (q) =>
+        q.eq("listingId", listing._id),
+      )
       .take(MAX_LISTING_PHOTOS);
     return {
       _id: listing._id,

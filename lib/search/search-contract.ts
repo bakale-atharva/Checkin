@@ -61,7 +61,9 @@ function normalizeText(value: string) {
 
 function assertInteger(value: number, label: string, minimum: number) {
   if (!Number.isInteger(value) || value < minimum) {
-    throw new SearchValidationError(`${label} must be an integer of at least ${minimum}.`);
+    throw new SearchValidationError(
+      `${label} must be an integer of at least ${minimum}.`,
+    );
   }
 }
 
@@ -81,7 +83,10 @@ function dateFromIso(value: string) {
   return date;
 }
 
-function assertCoordinates(coordinates: { latitude: number; longitude: number }) {
+function assertCoordinates(coordinates: {
+  latitude: number;
+  longitude: number;
+}) {
   if (
     !Number.isFinite(coordinates.latitude) ||
     !Number.isFinite(coordinates.longitude) ||
@@ -94,9 +99,13 @@ function assertCoordinates(coordinates: { latitude: number; longitude: number })
   }
 }
 
-export function normalizeSearchInput(input: SearchInput): NormalizedSearchInput {
+export function normalizeSearchInput(
+  input: SearchInput,
+): NormalizedSearchInput {
   if ((input.checkIn === undefined) !== (input.checkOut === undefined)) {
-    throw new SearchValidationError("Check-in and check-out must be supplied together.");
+    throw new SearchValidationError(
+      "Check-in and check-out must be supplied together.",
+    );
   }
 
   if (input.checkIn && input.checkOut) {
@@ -104,7 +113,9 @@ export function normalizeSearchInput(input: SearchInput): NormalizedSearchInput 
     const checkOut = dateFromIso(input.checkOut);
     const nights = (checkOut.getTime() - checkIn.getTime()) / 86_400_000;
     if (!Number.isInteger(nights) || nights < 1 || nights > 28) {
-      throw new SearchValidationError("Stays must be between one and twenty-eight nights.");
+      throw new SearchValidationError(
+        "Stays must be between one and twenty-eight nights.",
+      );
     }
   }
 
@@ -120,7 +131,9 @@ export function normalizeSearchInput(input: SearchInput): NormalizedSearchInput 
     input.maxNightlyPriceCents !== undefined &&
     input.minNightlyPriceCents > input.maxNightlyPriceCents
   ) {
-    throw new SearchValidationError("Minimum nightly price cannot exceed maximum nightly price.");
+    throw new SearchValidationError(
+      "Minimum nightly price cannot exceed maximum nightly price.",
+    );
   }
   if (input.origin) assertCoordinates(input.origin);
 
@@ -131,10 +144,17 @@ export function normalizeSearchInput(input: SearchInput): NormalizedSearchInput 
 
   return {
     ...input,
-    destination: input.destination ? normalizeText(input.destination) : undefined,
+    destination: input.destination
+      ? normalizeText(input.destination)
+      : undefined,
     category: input.category ? normalizeText(input.category) : undefined,
-    amenities: [...new Set((input.amenities ?? []).map((amenity) => amenity.trim()).filter(Boolean))]
-      .sort((left, right) => left.localeCompare(right)),
+    amenities: [
+      ...new Set(
+        (input.amenities ?? [])
+          .map((amenity) => amenity.trim())
+          .filter(Boolean),
+      ),
+    ].sort((left, right) => left.localeCompare(right)),
     sort,
   };
 }
@@ -154,11 +174,18 @@ function distanceKm(
   return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-function matchesFilters(listing: SearchableListing, input: NormalizedSearchInput) {
-  if (input.destination && normalizeText(listing.city) !== input.destination) return false;
-  if (input.guests !== undefined && listing.maxGuests < input.guests) return false;
-  if (input.category && normalizeText(listing.category) !== input.category) return false;
-  if (input.propertyType && listing.propertyType !== input.propertyType) return false;
+function matchesFilters(
+  listing: SearchableListing,
+  input: NormalizedSearchInput,
+) {
+  if (input.destination && normalizeText(listing.city) !== input.destination)
+    return false;
+  if (input.guests !== undefined && listing.maxGuests < input.guests)
+    return false;
+  if (input.category && normalizeText(listing.category) !== input.category)
+    return false;
+  if (input.propertyType && listing.propertyType !== input.propertyType)
+    return false;
   if (
     input.minNightlyPriceCents !== undefined &&
     listing.nightlyPriceCents < input.minNightlyPriceCents
@@ -171,9 +198,12 @@ function matchesFilters(listing: SearchableListing, input: NormalizedSearchInput
   ) {
     return false;
   }
-  if (input.bookingMode && listing.bookingMode !== input.bookingMode) return false;
+  if (input.bookingMode && listing.bookingMode !== input.bookingMode)
+    return false;
   const listingAmenities = new Set(listing.amenities.map(normalizeText));
-  return input.amenities.every((amenity) => listingAmenities.has(normalizeText(amenity)));
+  return input.amenities.every((amenity) =>
+    listingAmenities.has(normalizeText(amenity)),
+  );
 }
 
 function compareListings(
@@ -187,7 +217,8 @@ function compareListings(
   } else if (input.sort === "rating") {
     comparison = right.publishedRating - left.publishedRating;
   } else if (input.origin) {
-    comparison = distanceKm(input.origin, left) - distanceKm(input.origin, right);
+    comparison =
+      distanceKm(input.origin, left) - distanceKm(input.origin, right);
   }
   return comparison || left._id.localeCompare(right._id);
 }
@@ -198,7 +229,9 @@ export function buildSearchSnapshot(
   unavailableListingIds: Set<string>,
 ): SearchSnapshot {
   if (candidates.length > MAX_SEARCH_CANDIDATES) {
-    throw new SearchValidationError("Search is too broad. Choose a narrower destination or filters.");
+    throw new SearchValidationError(
+      "Search is too broad. Choose a narrower destination or filters.",
+    );
   }
 
   const results = candidates
@@ -207,7 +240,11 @@ export function buildSearchSnapshot(
     .sort((left, right) => compareListings(left, right, input))
     .map(({ _id, ...listing }) => ({ listingId: _id, ...listing }));
 
-  return { contractVersion: 1, listingIds: results.map((result) => result.listingId), results };
+  return {
+    contractVersion: 1,
+    listingIds: results.map((result) => result.listingId),
+    results,
+  };
 }
 
 export function pageSnapshotIds(listingIds: string[], offset: number) {

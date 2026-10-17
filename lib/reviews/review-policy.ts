@@ -10,7 +10,11 @@ export const GUEST_RATING_KEYS = [
   "value",
 ] as const;
 
-export const HOST_RATING_KEYS = ["communication", "cleanliness", "ruleObservance"] as const;
+export const HOST_RATING_KEYS = [
+  "communication",
+  "cleanliness",
+  "ruleObservance",
+] as const;
 
 export function shouldRevealReviews({
   now,

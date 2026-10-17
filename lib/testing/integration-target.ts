@@ -15,7 +15,9 @@ export type IntegrationTarget = {
  * network call unless the explicit marker, URL, and a non-production deploy key
  * for that same deployment are configured. Never falls back to other targets.
  */
-export function getIntegrationTarget(environment: Environment): IntegrationTarget {
+export function getIntegrationTarget(
+  environment: Environment,
+): IntegrationTarget {
   if (environment.CHECKIN_CONVEX_TEST_DEPLOYMENT !== TEST_DEPLOYMENT_MARKER) {
     throw new Error(
       'CHECKIN_CONVEX_TEST_DEPLOYMENT must be "true" (set in .env.test.local) before integration tests can run.',
@@ -24,7 +26,9 @@ export function getIntegrationTarget(environment: Environment): IntegrationTarge
 
   const url = environment.CONVEX_TEST_DEPLOYMENT_URL;
   if (!url) {
-    throw new Error("CONVEX_TEST_DEPLOYMENT_URL must name a dedicated Convex test deployment.");
+    throw new Error(
+      "CONVEX_TEST_DEPLOYMENT_URL must name a dedicated Convex test deployment.",
+    );
   }
   let host: string;
   try {
@@ -36,19 +40,28 @@ export function getIntegrationTarget(environment: Environment): IntegrationTarge
 
   const deployKey = environment.CONVEX_DEPLOY_KEY;
   if (!deployKey) {
-    throw new Error("CONVEX_DEPLOY_KEY for the test deployment must be set in .env.test.local.");
+    throw new Error(
+      "CONVEX_DEPLOY_KEY for the test deployment must be set in .env.test.local.",
+    );
   }
   const [keyType, rest = ""] = deployKey.split(":", 2);
   if (keyType !== "dev" && keyType !== "preview") {
     throw new Error("Integration tests refuse production deploy keys.");
   }
   if (!rest.startsWith(`${deploymentName}|`)) {
-    throw new Error("CONVEX_DEPLOY_KEY does not belong to CONVEX_TEST_DEPLOYMENT_URL.");
+    throw new Error(
+      "CONVEX_DEPLOY_KEY does not belong to CONVEX_TEST_DEPLOYMENT_URL.",
+    );
   }
 
-  for (const appUrl of [environment.NEXT_PUBLIC_CONVEX_URL, environment.CONVEX_URL]) {
+  for (const appUrl of [
+    environment.NEXT_PUBLIC_CONVEX_URL,
+    environment.CONVEX_URL,
+  ]) {
     if (appUrl && appUrl.replace(/\/$/, "") === url.replace(/\/$/, "")) {
-      throw new Error("The integration-test deployment must differ from the application deployment.");
+      throw new Error(
+        "The integration-test deployment must differ from the application deployment.",
+      );
     }
   }
 
