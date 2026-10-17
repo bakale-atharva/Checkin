@@ -34,6 +34,18 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-* { border-color: var(--checkin-line); }
-::selection { background: color-mix(in srgb, var(--checkin-signal) 25%, transparent); }
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; } }
+* {
+  border-color: var(--checkin-line);
+}
+::selection {
+  background: color-mix(in srgb, var(--checkin-signal) 25%, transparent);
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

@@ -1,20 +1,60 @@
 import { ConvexError, v } from "convex/values";
 
 import { internalMutation } from "./_generated/server";
-import { allowsSimulatorControls, parseDeploymentRole } from "../lib/operations/deployment-role";
+import {
+  allowsSimulatorControls,
+  parseDeploymentRole,
+} from "../lib/operations/deployment-role";
 import { listingSearchFields } from "../lib/search/listing-search-fields";
 
 const SEED_LISTING_COUNT = 60;
 
 const cities = [
-  { city: "Lisbon", countryCode: "PT", timezone: "Europe/Lisbon", latitude: 38.7223, longitude: -9.1393 },
-  { city: "Kyoto", countryCode: "JP", timezone: "Asia/Tokyo", latitude: 35.0116, longitude: 135.7681 },
-  { city: "Austin", countryCode: "US", timezone: "America/Chicago", latitude: 30.2672, longitude: -97.7431 },
-  { city: "Reykjavik", countryCode: "IS", timezone: "Atlantic/Reykjavik", latitude: 64.1466, longitude: -21.9426 },
-  { city: "Melbourne", countryCode: "AU", timezone: "Australia/Melbourne", latitude: -37.8136, longitude: 144.9631 },
+  {
+    city: "Lisbon",
+    countryCode: "PT",
+    timezone: "Europe/Lisbon",
+    latitude: 38.7223,
+    longitude: -9.1393,
+  },
+  {
+    city: "Kyoto",
+    countryCode: "JP",
+    timezone: "Asia/Tokyo",
+    latitude: 35.0116,
+    longitude: 135.7681,
+  },
+  {
+    city: "Austin",
+    countryCode: "US",
+    timezone: "America/Chicago",
+    latitude: 30.2672,
+    longitude: -97.7431,
+  },
+  {
+    city: "Reykjavik",
+    countryCode: "IS",
+    timezone: "Atlantic/Reykjavik",
+    latitude: 64.1466,
+    longitude: -21.9426,
+  },
+  {
+    city: "Melbourne",
+    countryCode: "AU",
+    timezone: "Australia/Melbourne",
+    latitude: -37.8136,
+    longitude: 144.9631,
+  },
 ] as const;
 
-const homeNames = ["Sunlit", "Quiet", "Garden", "Harbor", "Cedar", "Terrace"] as const;
+const homeNames = [
+  "Sunlit",
+  "Quiet",
+  "Garden",
+  "Harbor",
+  "Cedar",
+  "Terrace",
+] as const;
 const homeTypes = ["entire_home", "private_room", "shared_room"] as const;
 
 /**
@@ -30,16 +70,25 @@ export const seedListings = internalMutation({
   },
   returns: v.object({ created: v.number(), skipped: v.boolean() }),
   handler: async (ctx, args) => {
-    if (!allowsSimulatorControls(parseDeploymentRole(process.env.CHECKIN_DEPLOYMENT_ROLE))) {
+    if (
+      !allowsSimulatorControls(
+        parseDeploymentRole(process.env.CHECKIN_DEPLOYMENT_ROLE),
+      )
+    ) {
       throw new ConvexError({
         code: "SEEDING_DISABLED",
-        message: "Seed data is limited to deployments with CHECKIN_DEPLOYMENT_ROLE set to test or demo.",
+        message:
+          "Seed data is limited to deployments with CHECKIN_DEPLOYMENT_ROLE set to test or demo.",
       });
     }
-    if (args.hostProfileIds.length < 3 || args.photoStorageIds.length < SEED_LISTING_COUNT) {
+    if (
+      args.hostProfileIds.length < 3 ||
+      args.photoStorageIds.length < SEED_LISTING_COUNT
+    ) {
       throw new ConvexError({
         code: "INVALID_SEED_INPUT",
-        message: "Provide at least three host profiles and sixty licensed photo storage IDs.",
+        message:
+          "Provide at least three host profiles and sixty licensed photo storage IDs.",
       });
     }
     const existing = await ctx.db
@@ -48,7 +97,9 @@ export const seedListings = internalMutation({
       .take(1);
     if (existing.length > 0) return { created: 0, skipped: true };
 
-    const hosts = await Promise.all(args.hostProfileIds.map((profileId) => ctx.db.get(profileId)));
+    const hosts = await Promise.all(
+      args.hostProfileIds.map((profileId) => ctx.db.get(profileId)),
+    );
     if (hosts.some((host) => host === null)) {
       throw new ConvexError({
         code: "INVALID_SEED_INPUT",
@@ -59,7 +110,8 @@ export const seedListings = internalMutation({
     const now = Date.now();
     for (let index = 0; index < SEED_LISTING_COUNT; index += 1) {
       const city = cities[index % cities.length];
-      const status = index < 48 ? "published" : index < 58 ? "draft" : "archived";
+      const status =
+        index < 48 ? "published" : index < 58 ? "draft" : "archived";
       const propertyType = homeTypes[index % homeTypes.length];
       const listingId = await ctx.db.insert("listings", {
         ownerProfileId: args.hostProfileIds[index % args.hostProfileIds.length],

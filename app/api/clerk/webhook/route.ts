@@ -4,7 +4,9 @@ import type { NextRequest } from "next/server";
 
 import { api } from "@/convex/_generated/api";
 
-function isHostPlan(slug: string | undefined): slug is "free_host" | "host_pro" {
+function isHostPlan(
+  slug: string | undefined,
+): slug is "free_host" | "host_pro" {
   return slug === "free_host" || slug === "host_pro";
 }
 
@@ -29,7 +31,9 @@ export async function POST(request: NextRequest) {
     event.type === "subscription.pastDue"
   ) {
     const clerkUserId = event.data.payer.user_id;
-    const item = event.data.items.find((candidate) => isHostPlan(candidate.plan?.slug));
+    const item = event.data.items.find((candidate) =>
+      isHostPlan(candidate.plan?.slug),
+    );
     const plan = item?.plan;
     if (!clerkUserId || !plan) return new Response(null, { status: 200 });
     await fetchMutation(api.billing.ingestSubscriptionWebhook, {

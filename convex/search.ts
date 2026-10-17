@@ -21,8 +21,15 @@ const propertyTypeValidator = v.union(
   v.literal("private_room"),
   v.literal("shared_room"),
 );
-const bookingModeValidator = v.union(v.literal("instant"), v.literal("request"));
-const sortValidator = v.union(v.literal("price"), v.literal("rating"), v.literal("distance"));
+const bookingModeValidator = v.union(
+  v.literal("instant"),
+  v.literal("request"),
+);
+const sortValidator = v.union(
+  v.literal("price"),
+  v.literal("rating"),
+  v.literal("distance"),
+);
 const searchInputValidator = {
   destination: v.optional(v.string()),
   checkIn: v.optional(v.string()),
@@ -102,26 +109,41 @@ async function unavailableListingIds(
         ctx.db
           .query("blockedDates")
           .withIndex("by_listing_id_and_date", (q) =>
-            q.eq("listingId", listing._id).gte("date", checkIn).lt("date", checkOut),
+            q
+              .eq("listingId", listing._id)
+              .gte("date", checkIn)
+              .lt("date", checkOut),
           )
           .take(1),
         ctx.db
           .query("reservationNights")
           .withIndex("by_listing_id_and_date", (q) =>
-            q.eq("listingId", listing._id).gte("date", checkIn).lt("date", checkOut),
+            q
+              .eq("listingId", listing._id)
+              .gte("date", checkIn)
+              .lt("date", checkOut),
           )
           .take(1),
       ]);
-      return blocked.length > 0 || reserved.length > 0 ? String(listing._id) : null;
+      return blocked.length > 0 || reserved.length > 0
+        ? String(listing._id)
+        : null;
     }),
   );
-  return new Set(blocked.filter((listingId): listingId is string => listingId !== null));
+  return new Set(
+    blocked.filter((listingId): listingId is string => listingId !== null),
+  );
 }
 
-async function deleteSnapshot(ctx: MutationCtx, snapshotId: Id<"searchSnapshots">) {
+async function deleteSnapshot(
+  ctx: MutationCtx,
+  snapshotId: Id<"searchSnapshots">,
+) {
   const results = await ctx.db
     .query("searchSnapshotResults")
-    .withIndex("by_snapshot_id_and_position", (q) => q.eq("snapshotId", snapshotId))
+    .withIndex("by_snapshot_id_and_position", (q) =>
+      q.eq("snapshotId", snapshotId),
+    )
     .take(MAX_SEARCH_CANDIDATES + 1);
   await Promise.all(results.map((result) => ctx.db.delete(result._id)));
   await ctx.db.delete(snapshotId);
@@ -173,7 +195,12 @@ export const createSnapshot = mutation({
     const candidates = rawCandidates.filter(
       (listing) => !listing.bookingSuspended,
     );
-    const unavailable = await unavailableListingIds(ctx, candidates, input.checkIn, input.checkOut);
+    const unavailable = await unavailableListingIds(
+      ctx,
+      candidates,
+      input.checkIn,
+      input.checkOut,
+    );
     let snapshot;
     try {
       snapshot = buildSearchSnapshot(
@@ -201,7 +228,9 @@ export const createSnapshot = mutation({
       }
       throw error;
     }
-    const byId = new Map(candidates.map((listing) => [String(listing._id), listing]));
+    const byId = new Map(
+      candidates.map((listing) => [String(listing._id), listing]),
+    );
     const expiresAt = now + SEARCH_SNAPSHOT_TTL_MS;
     const snapshotId = await ctx.db.insert("searchSnapshots", {
       total: snapshot.listingIds.length,
@@ -211,7 +240,8 @@ export const createSnapshot = mutation({
     await Promise.all(
       snapshot.listingIds.map(async (listingId, position) => {
         const listing = byId.get(listingId);
-        if (!listing) throw new Error("Search snapshot contained an unknown listing.");
+        if (!listing)
+          throw new Error("Search snapshot contained an unknown listing.");
         await ctx.db.insert("searchSnapshotResults", {
           snapshotId,
           position,
@@ -219,9 +249,13 @@ export const createSnapshot = mutation({
         });
       }),
     );
-    await ctx.scheduler.runAfter(SEARCH_SNAPSHOT_TTL_MS, internal.search.expireSnapshot, {
-      snapshotId,
-    });
+    await ctx.scheduler.runAfter(
+      SEARCH_SNAPSHOT_TTL_MS,
+      internal.search.expireSnapshot,
+      {
+        snapshotId,
+      },
+    );
     return { snapshotId, expiresAt, total: snapshot.listingIds.length };
   },
 });
@@ -237,7 +271,10 @@ export const page = query({
   handler: async (ctx, args) => {
     const snapshot = await ctx.db.get(args.snapshotId);
     if (!snapshot || snapshot.expiresAt <= Date.now()) {
-      throw searchError("SEARCH_SNAPSHOT_EXPIRED", "This search has expired. Run it again.");
+      throw searchError(
+        "SEARCH_SNAPSHOT_EXPIRED",
+        "This search has expired. Run it again.",
+      );
     }
     try {
       pageSnapshotIds([], args.offset);
@@ -253,29 +290,33 @@ export const page = query({
         q.eq("snapshotId", snapshot._id).gte("position", args.offset),
       )
       .take(24);
-    const listings = await Promise.all(resultRows.map((result) => ctx.db.get(result.listingId)));
+    const listings = await Promise.all(
+      resultRows.map((result) => ctx.db.get(result.listingId)),
+    );
     const nextOffset = args.offset + resultRows.length;
     return {
-      page: resultRows.filter((_, index) => {
-        const listing = listings[index];
-        return listing?.status === "published" && !listing.bookingSuspended;
-      }).map((result) => ({
-        listingId: result.listingId,
-        title: result.title,
-        city: result.city,
-        region: result.region,
-        countryCode: result.countryCode,
-        latitude: result.latitude,
-        longitude: result.longitude,
-        nightlyPriceCents: result.nightlyPriceCents,
-        publishedRating: result.publishedRating,
-        maxGuests: result.maxGuests,
-        category: result.category,
-        propertyType: result.propertyType,
-        amenities: result.amenities,
-        bookingMode: result.bookingMode,
-        coverPhotoId: result.coverPhotoId,
-      })),
+      page: resultRows
+        .filter((_, index) => {
+          const listing = listings[index];
+          return listing?.status === "published" && !listing.bookingSuspended;
+        })
+        .map((result) => ({
+          listingId: result.listingId,
+          title: result.title,
+          city: result.city,
+          region: result.region,
+          countryCode: result.countryCode,
+          latitude: result.latitude,
+          longitude: result.longitude,
+          nightlyPriceCents: result.nightlyPriceCents,
+          publishedRating: result.publishedRating,
+          maxGuests: result.maxGuests,
+          category: result.category,
+          propertyType: result.propertyType,
+          amenities: result.amenities,
+          bookingMode: result.bookingMode,
+          coverPhotoId: result.coverPhotoId,
+        })),
       nextOffset,
       isDone: nextOffset >= snapshot.total,
       expiresAt: snapshot.expiresAt,
@@ -288,14 +329,19 @@ export const expireSnapshot = internalMutation({
   returns: v.null(),
   handler: async (ctx, args) => {
     const snapshot = await ctx.db.get(args.snapshotId);
-    if (snapshot && snapshot.expiresAt <= Date.now()) await deleteSnapshot(ctx, snapshot._id);
+    if (snapshot && snapshot.expiresAt <= Date.now())
+      await deleteSnapshot(ctx, snapshot._id);
     return null;
   },
 });
 
 export const backfillSearchFields = internalMutation({
   args: { paginationOpts: paginationOptsValidator },
-  returns: v.object({ continueCursor: v.string(), isDone: v.boolean(), updated: v.number() }),
+  returns: v.object({
+    continueCursor: v.string(),
+    isDone: v.boolean(),
+    updated: v.number(),
+  }),
   handler: async (ctx, args) => {
     const page = await ctx.db
       .query("listings")
@@ -305,23 +351,39 @@ export const backfillSearchFields = internalMutation({
     await Promise.all(
       page.page.map(async (listing) => {
         const fields = {
-          searchCity: listing.publicLocation.city.trim().toLocaleLowerCase("en-US"),
-          searchCountryCode: listing.publicLocation.countryCode.trim().toUpperCase(),
+          searchCity: listing.publicLocation.city
+            .trim()
+            .toLocaleLowerCase("en-US"),
+          searchCountryCode: listing.publicLocation.countryCode
+            .trim()
+            .toUpperCase(),
         };
-        if (listing.searchCity !== fields.searchCity || listing.searchCountryCode !== fields.searchCountryCode) {
+        if (
+          listing.searchCity !== fields.searchCity ||
+          listing.searchCountryCode !== fields.searchCountryCode
+        ) {
           await ctx.db.patch(listing._id, fields);
           updated += 1;
         }
       }),
     );
-    return { continueCursor: page.continueCursor, isDone: page.isDone, updated };
+    return {
+      continueCursor: page.continueCursor,
+      isDone: page.isDone,
+      updated,
+    };
   },
 });
 
 export const destinationFallbacks = query({
   args: {},
   returns: v.array(
-    v.object({ city: v.string(), countryCode: v.string(), latitude: v.number(), longitude: v.number() }),
+    v.object({
+      city: v.string(),
+      countryCode: v.string(),
+      latitude: v.number(),
+      longitude: v.number(),
+    }),
   ),
   handler: () => seededDestinations.map((destination) => ({ ...destination })),
 });

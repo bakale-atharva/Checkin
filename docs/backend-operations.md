@@ -7,11 +7,11 @@ Never commit deploy keys, `.env*` files, or values copied from them.
 
 ## Deployments and targeting
 
-| Deployment | Reference | Role (`CHECKIN_DEPLOYMENT_ROLE`) | Used by |
-| --- | --- | --- | --- |
-| Personal dev | `dev` (selected in `.env.local`) | unset → `standard` | `pnpm run backend`, the Next.js app |
-| Integration tests | `dev/integration-tests` | `test` | `pnpm test:integration` only |
-| Production | `prod` | unset → `standard` | `npx convex deploy` |
+| Deployment        | Reference                        | Role (`CHECKIN_DEPLOYMENT_ROLE`) | Used by                             |
+| ----------------- | -------------------------------- | -------------------------------- | ----------------------------------- |
+| Personal dev      | `dev` (selected in `.env.local`) | unset → `standard`               | `pnpm run backend`, the Next.js app |
+| Integration tests | `dev/integration-tests`          | `test`                           | `pnpm test:integration` only        |
+| Production        | `prod`                           | unset → `standard`               | `npx convex deploy`                 |
 
 - **Every CLI command defaults to `.env.local`'s dev deployment.** Name another
   target explicitly with `--deployment <ref>` (or `--prod`). Read the target
@@ -130,13 +130,13 @@ All overrides are internal functions. They can be run only with deployment
 admin access (the CLI or dashboard), never from the app. Run them against the
 deployment that owns the data, and always record who acted and why.
 
-| Situation | Command |
-| --- | --- |
+| Situation                                          | Command                                                                                                                                                           |
+| -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Late cancellation request (inside 24h of check-in) | `npx convex run reservations:resolveLateCancellation '{"supportRequestId":"…","approveRefund":true,"supportProfileId":"<your profile id>","resolutionNote":"…"}'` |
-| Failed or stalled simulated refund | `npx convex run reservations:retryRefund '{"paymentOperationId":"…","outcome":"success"}'` |
-| Force a reconciliation pass | `npx convex run operations:reconcileBackgroundOperations '{}'` |
-| Close an incident after acting | `npx convex run operations:resolveEvent '{"eventId":"…","resolvedBy":"<operator>","resolutionNote":"…"}'` |
-| Replay a Clerk billing event | Re-deliver it from the Clerk dashboard; the backend ignores duplicate event ids and events older than the stored state. |
+| Failed or stalled simulated refund                 | `npx convex run reservations:retryRefund '{"paymentOperationId":"…","outcome":"success"}'`                                                                        |
+| Force a reconciliation pass                        | `npx convex run operations:reconcileBackgroundOperations '{}'`                                                                                                    |
+| Close an incident after acting                     | `npx convex run operations:resolveEvent '{"eventId":"…","resolvedBy":"<operator>","resolutionNote":"…"}'`                                                         |
+| Replay a Clerk billing event                       | Re-deliver it from the Clerk dashboard; the backend ignores duplicate event ids and events older than the stored state.                                           |
 
 **Notes on these overrides:**
 

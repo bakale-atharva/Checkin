@@ -42,7 +42,8 @@ test("normalizes destination matching and validates a one-to-twenty-eight-night 
 
 test("rejects searches longer than twenty-eight nights", () => {
   assert.throws(
-    () => normalizeSearchInput({ checkIn: "2027-01-01", checkOut: "2027-01-30" }),
+    () =>
+      normalizeSearchInput({ checkIn: "2027-01-01", checkOut: "2027-01-30" }),
     SearchValidationError,
   );
 });
@@ -51,8 +52,18 @@ test("creates a shared cards-and-pins snapshot after filtering unavailable listi
   const snapshot = buildSearchSnapshot(
     [
       baseListing,
-      { ...baseListing, _id: "listing-b", nightlyPriceCents: 9_000, maxGuests: 2 },
-      { ...baseListing, _id: "listing-c", amenities: ["Wifi"], nightlyPriceCents: 8_000 },
+      {
+        ...baseListing,
+        _id: "listing-b",
+        nightlyPriceCents: 9_000,
+        maxGuests: 2,
+      },
+      {
+        ...baseListing,
+        _id: "listing-c",
+        amenities: ["Wifi"],
+        nightlyPriceCents: 8_000,
+      },
     ],
     normalizeSearchInput({
       destination: "Lisbon",
@@ -66,7 +77,10 @@ test("creates a shared cards-and-pins snapshot after filtering unavailable listi
   );
 
   assert.deepEqual(snapshot.listingIds, ["listing-a"]);
-  assert.deepEqual(snapshot.results.map((result) => result.listingId), ["listing-a"]);
+  assert.deepEqual(
+    snapshot.results.map((result) => result.listingId),
+    ["listing-a"],
+  );
   assert.equal(snapshot.results[0]?.nightlyPriceCents, 12_000);
   assert.equal(snapshot.contractVersion, 1);
 });
@@ -89,7 +103,11 @@ test("uses deterministic ties and returns non-overlapping pages of twenty-four",
   assert.equal(first.listingIds.length, SEARCH_PAGE_SIZE);
   assert.equal(second.listingIds.length, 6);
   assert.equal(new Set([...first.listingIds, ...second.listingIds]).size, 30);
-  assert.deepEqual(first.listingIds.slice(0, 3), ["listing-01", "listing-02", "listing-03"]);
+  assert.deepEqual(first.listingIds.slice(0, 3), [
+    "listing-01",
+    "listing-02",
+    "listing-03",
+  ]);
 });
 
 test("sorts by distance then stable listing id", () => {
@@ -106,5 +124,9 @@ test("sorts by distance then stable listing id", () => {
     new Set(),
   );
 
-  assert.deepEqual(snapshot.listingIds, ["listing-b", "listing-a", "listing-z"]);
+  assert.deepEqual(snapshot.listingIds, [
+    "listing-b",
+    "listing-a",
+    "listing-z",
+  ]);
 });

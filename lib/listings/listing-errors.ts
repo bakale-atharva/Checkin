@@ -7,7 +7,8 @@ export enum ListingErrorCode {
 }
 
 const messages = {
-  [ListingErrorCode.InvalidState]: "This listing cannot be changed in its current state.",
+  [ListingErrorCode.InvalidState]:
+    "This listing cannot be changed in its current state.",
   [ListingErrorCode.NotFound]: "The requested listing was not found.",
   [ListingErrorCode.InvalidInput]: "The listing details are invalid.",
   [ListingErrorCode.InvalidPhoto]: "The listing photo is invalid.",

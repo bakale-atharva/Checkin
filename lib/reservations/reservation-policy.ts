@@ -24,20 +24,10 @@ export type ReservationQuote = {
 };
 
 export type ReservationStatus =
-  | "pending"
-  | "confirmed"
-  | "cancelled"
-  | "completed"
-  | "declined"
-  | "expired";
+  "pending" | "confirmed" | "cancelled" | "completed" | "declined" | "expired";
 
 export type PaymentStatus =
-  | "not_required"
-  | "hold"
-  | "paid"
-  | "declined"
-  | "refunded"
-  | "refund_failed";
+  "not_required" | "hold" | "paid" | "declined" | "refunded" | "refund_failed";
 
 type QuoteInput = {
   checkIn: string;
@@ -86,7 +76,9 @@ function validateTimezone(timezone: string) {
 
 function validateMoney(value: number, label: string) {
   if (!Number.isInteger(value) || value < 0) {
-    throw new ReservationPolicyError(`${label} must be a non-negative integer amount in cents.`);
+    throw new ReservationPolicyError(
+      `${label} must be a non-negative integer amount in cents.`,
+    );
   }
 }
 
@@ -107,7 +99,11 @@ function timezoneOffsetMinutes(timestamp: number, timezone: string) {
     second: "2-digit",
     hourCycle: "h23",
   }).formatToParts(new Date(timestamp));
-  const values = Object.fromEntries(parts.filter((part) => part.type !== "literal").map((part) => [part.type, part.value]));
+  const values = Object.fromEntries(
+    parts
+      .filter((part) => part.type !== "literal")
+      .map((part) => [part.type, part.value]),
+  );
   const localAsUtc = Date.UTC(
     Number(values.year),
     Number(values.month) - 1,
@@ -134,17 +130,28 @@ function localDateTimeWithOffset(date: string, time: string, timezone: string) {
   const timestamp = localAsUtc - offset * 60_000;
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: timezone,
-    year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
     hourCycle: "h23",
   }).formatToParts(new Date(timestamp));
   const actual = Object.fromEntries(
-    parts.filter((part) => part.type !== "literal").map((part) => [part.type, part.value]),
+    parts
+      .filter((part) => part.type !== "literal")
+      .map((part) => [part.type, part.value]),
   );
   if (
-    Number(actual.year) !== year || Number(actual.month) !== month || Number(actual.day) !== day ||
-    Number(actual.hour) !== hour || Number(actual.minute) !== minute
+    Number(actual.year) !== year ||
+    Number(actual.month) !== month ||
+    Number(actual.day) !== day ||
+    Number(actual.hour) !== hour ||
+    Number(actual.minute) !== minute
   ) {
-    throw new ReservationPolicyError("The property-local time does not exist in its timezone.");
+    throw new ReservationPolicyError(
+      "The property-local time does not exist in its timezone.",
+    );
   }
   // Repeated wall times consistently resolve to the earlier matching instant.
   return `${date}T${time}:00.000${formatOffset(offset)}`;
@@ -155,9 +162,13 @@ export function stayDates(checkIn: string, checkOut: string) {
   const end = parseStayDate(checkOut);
   const nights = (end.getTime() - start.getTime()) / 86_400_000;
   if (!Number.isInteger(nights) || nights < 1 || nights > 28) {
-    throw new ReservationPolicyError("Stays must be between one and twenty-eight nights.");
+    throw new ReservationPolicyError(
+      "Stays must be between one and twenty-eight nights.",
+    );
   }
-  return Array.from({ length: nights }, (_, index) => addLocalDays(checkIn, index));
+  return Array.from({ length: nights }, (_, index) =>
+    addLocalDays(checkIn, index),
+  );
 }
 
 export function datesOverlap(
@@ -177,14 +188,21 @@ export function createReservationQuote(input: QuoteInput): ReservationQuote {
   validateMoney(input.cleaningFeeCents, "Cleaning fee");
   const dates = stayDates(input.checkIn, input.checkOut);
   const nightlyCharges = dates.map((date) => {
-    const amountCents = input.nightlyPriceOverrides[date] ?? input.nightlyPriceCents;
+    const amountCents =
+      input.nightlyPriceOverrides[date] ?? input.nightlyPriceCents;
     validateMoney(amountCents, "Nightly price override");
     return { date, amountCents };
   });
-  const accommodationCents = nightlyCharges.reduce((total, charge) => total + charge.amountCents, 0);
-  const serviceFeeCents = Math.round((accommodationCents * SERVICE_FEE_BASIS_POINTS) / BASIS_POINTS);
+  const accommodationCents = nightlyCharges.reduce(
+    (total, charge) => total + charge.amountCents,
+    0,
+  );
+  const serviceFeeCents = Math.round(
+    (accommodationCents * SERVICE_FEE_BASIS_POINTS) / BASIS_POINTS,
+  );
   const taxCents = 0;
-  const totalCents = accommodationCents + input.cleaningFeeCents + serviceFeeCents + taxCents;
+  const totalCents =
+    accommodationCents + input.cleaningFeeCents + serviceFeeCents + taxCents;
   const checkInAt = localDateTimeWithOffset(
     input.checkIn,
     input.checkInTime ?? "15:00",
@@ -216,14 +234,20 @@ export function isCancellationRefundEligible(checkInAt: string, now: string) {
   const checkIn = Date.parse(checkInAt);
   const requestedAt = Date.parse(now);
   if (Number.isNaN(checkIn) || Number.isNaN(requestedAt)) {
-    throw new ReservationPolicyError("Cancellation times must be valid ISO timestamps.");
+    throw new ReservationPolicyError(
+      "Cancellation times must be valid ISO timestamps.",
+    );
   }
   return requestedAt <= checkIn - 24 * 60 * 60 * 1000;
 }
 
 export function reservationForBookingMode(bookingMode: "instant" | "request") {
   return bookingMode === "instant"
-    ? { reservationStatus: "pending" as const, inventoryReserved: true, paymentStatus: "hold" as const }
+    ? {
+        reservationStatus: "pending" as const,
+        inventoryReserved: true,
+        paymentStatus: "hold" as const,
+      }
     : {
         reservationStatus: "pending" as const,
         inventoryReserved: false,
@@ -231,7 +255,10 @@ export function reservationForBookingMode(bookingMode: "instant" | "request") {
       };
 }
 
-const validReservationTransitions: Record<ReservationStatus, readonly ReservationStatus[]> = {
+const validReservationTransitions: Record<
+  ReservationStatus,
+  readonly ReservationStatus[]
+> = {
   pending: ["confirmed", "cancelled", "declined", "expired"],
   confirmed: ["cancelled", "completed"],
   cancelled: [],
@@ -240,9 +267,14 @@ const validReservationTransitions: Record<ReservationStatus, readonly Reservatio
   expired: [],
 };
 
-export function transitionReservation(current: ReservationStatus, next: ReservationStatus) {
+export function transitionReservation(
+  current: ReservationStatus,
+  next: ReservationStatus,
+) {
   if (!validReservationTransitions[current].includes(next)) {
-    throw new ReservationPolicyError(`Cannot transition a ${current} reservation to ${next}.`);
+    throw new ReservationPolicyError(
+      `Cannot transition a ${current} reservation to ${next}.`,
+    );
   }
   return next;
 }
