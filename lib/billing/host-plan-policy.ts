@@ -33,12 +33,13 @@ export function selectFreeListing(
     return selectedListingId;
   }
 
-  return publishedListings.reduce<string | null>(
-    (oldestId, listing) => {
-      if (oldestId === null) return listing.id;
-      const oldest = publishedListings.find((candidate) => candidate.id === oldestId);
-      return oldest && oldest.publishedAt <= listing.publishedAt ? oldestId : listing.id;
-    },
-    null,
-  );
+  return publishedListings.reduce<string | null>((oldestId, listing) => {
+    if (oldestId === null) return listing.id;
+    const oldest = publishedListings.find(
+      (candidate) => candidate.id === oldestId,
+    );
+    return oldest && oldest.publishedAt <= listing.publishedAt
+      ? oldestId
+      : listing.id;
+  }, null);
 }

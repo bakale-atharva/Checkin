@@ -40,12 +40,12 @@ The project is in active development. The current release establishes authentica
 
 2. Create a local environment file (for example, `.env.local`). Do not commit it. The app currently requires these values:
 
-   | Variable | Used by |
-   | --- | --- |
-   | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Next.js / Clerk client |
-   | `CLERK_SECRET_KEY` | Next.js / Clerk server |
-   | `NEXT_PUBLIC_CONVEX_URL` | Convex client |
-   | `CLERK_FRONTEND_API_URL` | Convex Clerk issuer configuration |
+   | Variable                            | Used by                           |
+   | ----------------------------------- | --------------------------------- |
+   | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Next.js / Clerk client            |
+   | `CLERK_SECRET_KEY`                  | Next.js / Clerk server            |
+   | `NEXT_PUBLIC_CONVEX_URL`            | Convex client                     |
+   | `CLERK_FRONTEND_API_URL`            | Convex Clerk issuer configuration |
 
    Obtain the values from your Clerk and Convex development environments; this repository intentionally contains no credentials or environment values.
 
@@ -65,14 +65,14 @@ The project is in active development. The current release establishes authentica
 
 ## Commands
 
-| Command | Purpose |
-| --- | --- |
-| `pnpm run frontend` | Start the Next.js development server. |
-| `pnpm run backend` | Start Convex development. |
-| `pnpm run build` | Create a production Next.js build. |
-| `pnpm start` | Run the production server after a build. |
-| `pnpm run lint` | Run ESLint. |
-| `pnpm test` | Run isolated TypeScript tests with Node's test runner. |
+| Command             | Purpose                                                |
+| ------------------- | ------------------------------------------------------ |
+| `pnpm run frontend` | Start the Next.js development server.                  |
+| `pnpm run backend`  | Start Convex development.                              |
+| `pnpm run build`    | Create a production Next.js build.                     |
+| `pnpm start`        | Run the production server after a build.               |
+| `pnpm run lint`     | Run ESLint.                                            |
+| `pnpm test`         | Run isolated TypeScript tests with Node's test runner. |
 
 ## Authentication and authorization
 

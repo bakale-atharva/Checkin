@@ -52,15 +52,16 @@ test("keeps property-local check-in timestamps correct through daylight-saving c
 
 test("rejects nonexistent property-local times during daylight-saving gaps", () => {
   assert.throws(
-    () => createReservationQuote({
-      checkIn: "2027-03-14",
-      checkOut: "2027-03-15",
-      timezone: "America/New_York",
-      checkInTime: "02:30",
-      nightlyPriceCents: 10_000,
-      cleaningFeeCents: 0,
-      nightlyPriceOverrides: {},
-    }),
+    () =>
+      createReservationQuote({
+        checkIn: "2027-03-14",
+        checkOut: "2027-03-15",
+        timezone: "America/New_York",
+        checkInTime: "02:30",
+        nightlyPriceCents: 10_000,
+        cleaningFeeCents: 0,
+        nightlyPriceOverrides: {},
+      }),
     ReservationPolicyError,
   );
 });
@@ -93,17 +94,29 @@ test("rejects invalid stays and invalid property timezones", () => {
 });
 
 test("permits adjacent stays but rejects overlapping stays", () => {
-  assert.equal(datesOverlap("2026-11-01", "2026-11-04", "2026-11-04", "2026-11-06"), false);
-  assert.equal(datesOverlap("2026-11-01", "2026-11-04", "2026-11-03", "2026-11-06"), true);
+  assert.equal(
+    datesOverlap("2026-11-01", "2026-11-04", "2026-11-04", "2026-11-06"),
+    false,
+  );
+  assert.equal(
+    datesOverlap("2026-11-01", "2026-11-04", "2026-11-03", "2026-11-06"),
+    true,
+  );
 });
 
 test("allows a full guest refund until exactly 24 local hours before check-in", () => {
   assert.equal(
-    isCancellationRefundEligible("2026-11-01T15:00:00.000-04:00", "2026-10-31T15:00:00.000-04:00"),
+    isCancellationRefundEligible(
+      "2026-11-01T15:00:00.000-04:00",
+      "2026-10-31T15:00:00.000-04:00",
+    ),
     true,
   );
   assert.equal(
-    isCancellationRefundEligible("2026-11-01T15:00:00.000-04:00", "2026-10-31T15:00:00.001-04:00"),
+    isCancellationRefundEligible(
+      "2026-11-01T15:00:00.000-04:00",
+      "2026-10-31T15:00:00.001-04:00",
+    ),
     false,
   );
 });

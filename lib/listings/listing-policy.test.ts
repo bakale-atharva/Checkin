@@ -10,8 +10,12 @@ import {
 } from "./listing-policy";
 
 test("allows a draft to be published and later returned to draft", () => {
-  assert.doesNotThrow(() => assertListingStatusTransition("draft", "published"));
-  assert.doesNotThrow(() => assertListingStatusTransition("published", "draft"));
+  assert.doesNotThrow(() =>
+    assertListingStatusTransition("draft", "published"),
+  );
+  assert.doesNotThrow(() =>
+    assertListingStatusTransition("published", "draft"),
+  );
 });
 
 test("prevents an archived listing from becoming reservable again", () => {
@@ -27,12 +31,14 @@ test("permits deletion only for drafts", () => {
   assert.throws(
     () => assertListingCanBeDeleted("published", false),
     (error: unknown) =>
-      error instanceof ListingPolicyError && error.code === "LISTING_NOT_DELETABLE",
+      error instanceof ListingPolicyError &&
+      error.code === "LISTING_NOT_DELETABLE",
   );
   assert.throws(
     () => assertListingCanBeDeleted("draft", true),
     (error: unknown) =>
-      error instanceof ListingPolicyError && error.code === "LISTING_NOT_DELETABLE",
+      error instanceof ListingPolicyError &&
+      error.code === "LISTING_NOT_DELETABLE",
   );
 });
 
@@ -46,7 +52,8 @@ test("requires a complete stay and price before publishing", () => {
         timezone: "Not/A_Timezone",
       }),
     (error: unknown) =>
-      error instanceof ListingPolicyError && error.code === "LISTING_NOT_PUBLISHABLE",
+      error instanceof ListingPolicyError &&
+      error.code === "LISTING_NOT_PUBLISHABLE",
   );
 });
 

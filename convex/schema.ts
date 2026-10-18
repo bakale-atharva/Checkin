@@ -159,7 +159,9 @@ export default defineSchema({
     guests: v.number(),
     expiresAt: v.number(),
     quote: v.object({
-      nightlyCharges: v.array(v.object({ date: v.string(), amountCents: v.number() })),
+      nightlyCharges: v.array(
+        v.object({ date: v.string(), amountCents: v.number() }),
+      ),
       accommodationCents: v.number(),
       cleaningFeeCents: v.number(),
       serviceFeeCents: v.number(),
@@ -172,7 +174,10 @@ export default defineSchema({
     }),
     createdAt: v.number(),
   })
-    .index("by_guest_profile_id_and_expires_at", ["guestProfileId", "expiresAt"])
+    .index("by_guest_profile_id_and_expires_at", [
+      "guestProfileId",
+      "expiresAt",
+    ])
     .index("by_expires_at", ["expiresAt"]),
   reservations: defineTable({
     listingId: v.id("listings"),
@@ -185,12 +190,20 @@ export default defineSchema({
     guests: v.number(),
     bookingMode: v.union(v.literal("instant"), v.literal("request")),
     status: v.union(
-      v.literal("pending"), v.literal("confirmed"), v.literal("cancelled"),
-      v.literal("completed"), v.literal("declined"), v.literal("expired"),
+      v.literal("pending"),
+      v.literal("confirmed"),
+      v.literal("cancelled"),
+      v.literal("completed"),
+      v.literal("declined"),
+      v.literal("expired"),
     ),
     paymentStatus: v.union(
-      v.literal("not_required"), v.literal("hold"), v.literal("paid"),
-      v.literal("declined"), v.literal("refunded"), v.literal("refund_failed"),
+      v.literal("not_required"),
+      v.literal("hold"),
+      v.literal("paid"),
+      v.literal("declined"),
+      v.literal("refunded"),
+      v.literal("refund_failed"),
     ),
     paymentHoldExpiresAt: v.optional(v.number()),
     requestExpiresAt: v.optional(v.number()),
@@ -198,19 +211,38 @@ export default defineSchema({
     checkOutAt: v.string(),
     cancellationDeadline: v.string(),
     quote: v.object({
-      nightlyCharges: v.array(v.object({ date: v.string(), amountCents: v.number() })),
-      accommodationCents: v.number(), cleaningFeeCents: v.number(), serviceFeeCents: v.number(),
-      taxCents: v.number(), totalCents: v.number(), hostProceedsCents: v.number(),
+      nightlyCharges: v.array(
+        v.object({ date: v.string(), amountCents: v.number() }),
+      ),
+      accommodationCents: v.number(),
+      cleaningFeeCents: v.number(),
+      serviceFeeCents: v.number(),
+      taxCents: v.number(),
+      totalCents: v.number(),
+      hostProceedsCents: v.number(),
     }),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
-    .index("by_guest_profile_id_and_idempotency_key", ["guestProfileId", "idempotencyKey"])
-    .index("by_guest_profile_id_and_created_at", ["guestProfileId", "createdAt"])
+    .index("by_guest_profile_id_and_idempotency_key", [
+      "guestProfileId",
+      "idempotencyKey",
+    ])
+    .index("by_guest_profile_id_and_created_at", [
+      "guestProfileId",
+      "createdAt",
+    ])
     .index("by_host_profile_id_and_created_at", ["hostProfileId", "createdAt"])
-    .index("by_host_profile_id_and_status_and_created_at", ["hostProfileId", "status", "createdAt"])
+    .index("by_host_profile_id_and_status_and_created_at", [
+      "hostProfileId",
+      "status",
+      "createdAt",
+    ])
     .index("by_status_and_check_out", ["status", "checkOut"])
-    .index("by_status_and_payment_hold_expires_at", ["status", "paymentHoldExpiresAt"])
+    .index("by_status_and_payment_hold_expires_at", [
+      "status",
+      "paymentHoldExpiresAt",
+    ])
     .index("by_status_and_request_expires_at", ["status", "requestExpiresAt"]),
   reservationNights: defineTable({
     reservationId: v.id("reservations"),
@@ -225,18 +257,31 @@ export default defineSchema({
     kind: v.union(v.literal("charge"), v.literal("refund")),
     idempotencyKey: v.string(),
     amountCents: v.number(),
-    status: v.union(v.literal("pending"), v.literal("succeeded"), v.literal("declined"), v.literal("failed")),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("succeeded"),
+      v.literal("declined"),
+      v.literal("failed"),
+    ),
     attempts: v.number(),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
     .index("by_reservation_id", ["reservationId"])
-    .index("by_reservation_id_and_idempotency_key", ["reservationId", "idempotencyKey"])
+    .index("by_reservation_id_and_idempotency_key", [
+      "reservationId",
+      "idempotencyKey",
+    ])
     .index("by_status_and_updated_at", ["status", "updatedAt"]),
   paymentSimulationScenarios: defineTable({
     reservationId: v.id("reservations"),
     kind: v.union(v.literal("charge"), v.literal("refund")),
-    outcome: v.union(v.literal("success"), v.literal("decline"), v.literal("delay"), v.literal("refund_failure")),
+    outcome: v.union(
+      v.literal("success"),
+      v.literal("decline"),
+      v.literal("delay"),
+      v.literal("refund_failure"),
+    ),
     delayMs: v.number(),
     updatedAt: v.number(),
   }).index("by_reservation_id_and_kind", ["reservationId", "kind"]),
@@ -245,7 +290,9 @@ export default defineSchema({
     guestProfileId: v.id("users"),
     reason: v.string(),
     status: v.union(v.literal("open"), v.literal("resolved")),
-    resolution: v.optional(v.union(v.literal("refund_approved"), v.literal("declined"))),
+    resolution: v.optional(
+      v.union(v.literal("refund_approved"), v.literal("declined")),
+    ),
     resolutionNote: v.optional(v.string()),
     resolvedByProfileId: v.optional(v.id("users")),
     resolvedAt: v.optional(v.number()),
@@ -258,7 +305,10 @@ export default defineSchema({
     name: v.string(),
     createdAt: v.number(),
     updatedAt: v.number(),
-  }).index("by_owner_profile_id_and_updated_at", ["ownerProfileId", "updatedAt"]),
+  }).index("by_owner_profile_id_and_updated_at", [
+    "ownerProfileId",
+    "updatedAt",
+  ]),
   wishlistItems: defineTable({
     wishlistId: v.id("wishlists"),
     listingId: v.id("listings"),
@@ -286,7 +336,10 @@ export default defineSchema({
     senderProfileId: v.id("users"),
     body: v.string(),
     createdAt: v.number(),
-  }).index("by_conversation_id_and_created_at", ["conversationId", "createdAt"]),
+  }).index("by_conversation_id_and_created_at", [
+    "conversationId",
+    "createdAt",
+  ]),
   messageRateLimits: defineTable({
     profileId: v.id("users"),
     windowStartedAt: v.number(),
@@ -310,27 +363,38 @@ export default defineSchema({
     reviewerProfileId: v.id("users"),
     recipientProfileId: v.id("users"),
     kind: v.union(v.literal("guest_to_host"), v.literal("host_to_guest")),
-    guestRatings: v.optional(v.object({
-      overall: v.number(),
-      cleanliness: v.number(),
-      accuracy: v.number(),
-      checkIn: v.number(),
-      communication: v.number(),
-      location: v.number(),
-      value: v.number(),
-    })),
-    hostRatings: v.optional(v.object({
-      communication: v.number(),
-      cleanliness: v.number(),
-      ruleObservance: v.number(),
-    })),
+    guestRatings: v.optional(
+      v.object({
+        overall: v.number(),
+        cleanliness: v.number(),
+        accuracy: v.number(),
+        checkIn: v.number(),
+        communication: v.number(),
+        location: v.number(),
+        value: v.number(),
+      }),
+    ),
+    hostRatings: v.optional(
+      v.object({
+        communication: v.number(),
+        cleanliness: v.number(),
+        ruleObservance: v.number(),
+      }),
+    ),
     comment: v.optional(v.string()),
     submittedAt: v.number(),
     revealedAt: v.optional(v.number()),
   })
-    .index("by_reservation_id_and_reviewer_profile_id", ["reservationId", "reviewerProfileId"])
+    .index("by_reservation_id_and_reviewer_profile_id", [
+      "reservationId",
+      "reviewerProfileId",
+    ])
     .index("by_reservation_id", ["reservationId"])
-    .index("by_listing_id_and_kind_and_revealed_at", ["listingId", "kind", "revealedAt"])
+    .index("by_listing_id_and_kind_and_revealed_at", [
+      "listingId",
+      "kind",
+      "revealedAt",
+    ])
     .index("by_revealed_at_and_submitted_at", ["revealedAt", "submittedAt"]),
   reviewAggregates: defineTable({
     listingId: v.id("listings"),
@@ -364,7 +428,11 @@ export default defineSchema({
       v.literal("late_cancellation_requested"),
       v.literal("missed_transition_repaired"),
     ),
-    severity: v.union(v.literal("info"), v.literal("warning"), v.literal("error")),
+    severity: v.union(
+      v.literal("info"),
+      v.literal("warning"),
+      v.literal("error"),
+    ),
     message: v.string(),
     reservationId: v.optional(v.id("reservations")),
     paymentOperationId: v.optional(v.id("paymentOperations")),

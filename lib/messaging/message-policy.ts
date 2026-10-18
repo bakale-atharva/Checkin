@@ -17,7 +17,10 @@ export function nextMessageRateLimit(
   if (current.sentCount >= MESSAGE_RATE_LIMIT) {
     throw new MessageRateLimitError();
   }
-  return { windowStartedAt: current.windowStartedAt, sentCount: current.sentCount + 1 };
+  return {
+    windowStartedAt: current.windowStartedAt,
+    sentCount: current.sentCount + 1,
+  };
 }
 
 export function isConversationUnread(

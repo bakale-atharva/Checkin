@@ -7,10 +7,10 @@ configuration exports, keys, webhook secrets, or application identifiers.
 
 Create these user plans in Clerk test mode:
 
-| Plan | Price | Features |
-| --- | --- | --- |
-| `free_host` | $0 | `manage_listings`, `manage_bookings`, `guest_messaging`, `view_simulated_earnings` |
-| `host_pro` | $19 USD/month | All Free Host features plus `publish_multiple_listings` |
+| Plan        | Price         | Features                                                                           |
+| ----------- | ------------- | ---------------------------------------------------------------------------------- |
+| `free_host` | $0            | `manage_listings`, `manage_bookings`, `guest_messaging`, `view_simulated_earnings` |
+| `host_pro`  | $19 USD/month | All Free Host features plus `publish_multiple_listings`                            |
 
 The server enforces one published listing for Free Host and ten for Host Pro;
 feature assignments describe the UI capabilities and do not replace that server
