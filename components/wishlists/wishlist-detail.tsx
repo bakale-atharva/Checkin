@@ -1,17 +1,13 @@
 "use client";
 
-import {
-  useConvexAuth,
-  useMutation,
-  usePaginatedQuery,
-  useQuery,
-} from "convex/react";
+import { useMutation, usePaginatedQuery, useQuery } from "convex/react";
 import { ArrowLeft, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 
 import { ListingPhoto } from "@/components/discovery/listing-photo";
 import { Button } from "@/components/ui/button";
+import { useProfileReady } from "@/components/use-profile-ready";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { formatNightlyPrice } from "@/lib/discovery/catalog";
@@ -32,15 +28,15 @@ export function WishlistDetail() {
   const { wishlistId } = useParams<{ wishlistId: string }>();
   const id = wishlistId as Id<"wishlists">;
   const router = useRouter();
-  const { isAuthenticated } = useConvexAuth();
+  const profileReady = useProfileReady();
   const wishlists = useQuery(
     api.dashboard.listWishlists,
-    isAuthenticated ? {} : "skip",
+    profileReady ? {} : "skip",
   ) as Array<{ _id: Id<"wishlists">; name: string }> | undefined;
   const wishlist = wishlists?.find((candidate) => candidate._id === id);
   const items = usePaginatedQuery(
     api.dashboard.listWishlistItems,
-    isAuthenticated && wishlist ? { wishlistId: id } : "skip",
+    profileReady && wishlist ? { wishlistId: id } : "skip",
     { initialNumItems: 24 },
   );
   const removeItem = useMutation(api.dashboard.removeWishlistItem);

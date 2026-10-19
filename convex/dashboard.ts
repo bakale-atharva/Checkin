@@ -505,7 +505,23 @@ export const hostBookingRequests = query({
       .filter((q) => q.eq(q.field("bookingMode"), "request"))
       .order("desc")
       .paginate(args.paginationOpts);
-    return result;
+    return {
+      ...result,
+      page: await Promise.all(
+        result.page.map(async (reservation) => {
+          const [listing, guest] = await Promise.all([
+            ctx.db.get(reservation.listingId),
+            ctx.db.get(reservation.guestProfileId),
+          ]);
+          return {
+            ...reservation,
+            listingTitle: listing?.title ?? null,
+            // Hosts see a guest's first name only before the stay is confirmed.
+            guestFirstName: guest?.name?.split(" ")[0] ?? null,
+          };
+        }),
+      ),
+    };
   },
 });
 
@@ -546,7 +562,7 @@ export const hostCalendar = query({
     );
     if (args.listingId && owned.length === 0)
       throw dashboardError("LISTING_FORBIDDEN", "Listing not found.");
-    const [nights, blocked] = await Promise.all([
+    const [nights, blocked, overrides] = await Promise.all([
       Promise.all(
         owned.map((listing) =>
           ctx.db
@@ -564,6 +580,19 @@ export const hostCalendar = query({
         owned.map((listing) =>
           ctx.db
             .query("blockedDates")
+            .withIndex("by_listing_id_and_date", (q) =>
+              q
+                .eq("listingId", listing._id)
+                .gte("date", args.startDate)
+                .lt("date", args.endDate),
+            )
+            .take(MAX_CALENDAR_DAYS),
+        ),
+      ),
+      Promise.all(
+        owned.map((listing) =>
+          ctx.db
+            .query("nightlyPriceOverrides")
             .withIndex("by_listing_id_and_date", (q) =>
               q
                 .eq("listingId", listing._id)
@@ -596,6 +625,12 @@ export const hostCalendar = query({
         kind: "blocked" as const,
         listingId: day.listingId,
         date: day.date,
+      })),
+      ...overrides.flat().map((override) => ({
+        kind: "price" as const,
+        listingId: override.listingId,
+        date: override.date,
+        nightlyPriceCents: override.nightlyPriceCents,
       })),
     ].sort((a, b) => a.date.localeCompare(b.date));
   },

@@ -34,7 +34,7 @@ async function suspendExcessPublishedListings(
     planSlug: string;
     status: string;
     effectiveUntil: number | null;
-  },
+  } | null,
   now: number,
 ) {
   const profile = await ctx.db
@@ -165,10 +165,25 @@ export const selectFreeListingForDowngrade = mutation({
         authorizationError(AuthorizationErrorCode.Forbidden),
       );
     }
+    const now = Date.now();
     await ctx.db.patch(profile._id, {
       selectedFreeListingId: listing._id,
-      updatedAt: Date.now(),
+      updatedAt: now,
     });
+    // Re-apply the allowance so a host already on the free plan can swap which listing stays bookable.
+    const [subscription] = await ctx.db
+      .query("billingSubscriptions")
+      .withIndex("by_clerk_user_id_and_updated_at", (q) =>
+        q.eq("clerkUserId", profile.clerkUserId),
+      )
+      .order("desc")
+      .take(1);
+    await suspendExcessPublishedListings(
+      ctx,
+      profile.clerkUserId,
+      subscription ?? null,
+      now,
+    );
     return null;
   },
 });
