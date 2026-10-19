@@ -38,6 +38,19 @@ test.describe("discovery", () => {
     await expect(page.locator("#content")).toBeFocused();
   });
 
+  test("keeps the small-screen map view across reloads", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await listingLinks(page);
+
+    await page.getByRole("button", { name: "Show map" }).click();
+    await expect(page).toHaveURL(/view=map/);
+    await page.reload();
+    await expect(page.getByRole("button", { name: "Show list" })).toBeVisible();
+
+    await page.getByRole("button", { name: "Show list" }).click();
+    await expect(page).not.toHaveURL(/view=map/);
+  });
+
   test("fits a 320px screen without sideways scrolling", async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 720 });
     await listingLinks(page);
