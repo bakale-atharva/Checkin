@@ -17,7 +17,7 @@ import { ListingStatusBadge } from "./listing-status-badge";
 import { useHostAllowance } from "./use-host-allowance";
 
 const actionLink =
-  "inline-flex h-9 items-center rounded-[0.8rem] px-3 text-xs font-semibold transition-colors hover:bg-checkin-mist/60 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-checkin-signal/35";
+  "inline-flex h-9 pointer-coarse:h-11 items-center rounded-[0.8rem] px-3 text-xs font-semibold transition-colors hover:bg-checkin-mist/60 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-checkin-signal/35";
 
 export function HostingOverview() {
   const router = useRouter();

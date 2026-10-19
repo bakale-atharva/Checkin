@@ -288,7 +288,7 @@ function WizardForm({
     <main className="mx-auto w-full max-w-[90rem] flex-1 px-4 py-8 sm:px-6 lg:px-8">
       <Link
         href="/hosting"
-        className="inline-flex min-h-10 items-center gap-1 text-sm font-semibold text-checkin-muted hover:text-checkin-ink"
+        className="inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-checkin-muted hover:text-checkin-ink"
       >
         <ChevronLeft aria-hidden className="size-4" />
         All listings

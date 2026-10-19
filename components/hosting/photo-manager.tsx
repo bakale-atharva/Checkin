@@ -23,7 +23,7 @@ export type ManagedPhoto = {
 };
 
 const iconButton =
-  "grid size-9 place-items-center rounded-full bg-checkin-paper/95 text-checkin-ink shadow-sm transition-colors hover:bg-checkin-paper focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-checkin-signal/45 disabled:opacity-35";
+  "grid size-9 pointer-coarse:size-11 place-items-center rounded-full bg-checkin-paper/95 text-checkin-ink shadow-sm transition-colors hover:bg-checkin-paper focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-checkin-signal/45 disabled:opacity-35";
 
 export function PhotoManager({
   listingId,

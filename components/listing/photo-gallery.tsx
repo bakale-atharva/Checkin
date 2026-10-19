@@ -91,7 +91,7 @@ export function PhotoGallery({
           <button
             type="button"
             onClick={(event) => open(0, event.currentTarget)}
-            className="absolute right-4 bottom-4 inline-flex min-h-10 items-center gap-2 rounded-[0.7rem] border border-checkin-ink/20 bg-checkin-paper px-3 text-sm font-semibold shadow-sm focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-checkin-signal/45"
+            className="absolute right-4 bottom-4 inline-flex min-h-11 items-center gap-2 rounded-[0.7rem] border border-checkin-ink/20 bg-checkin-paper px-3 text-sm font-semibold shadow-sm focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-checkin-signal/45"
           >
             <Grid2x2 aria-hidden className="size-4" />
             Show all {photos.length} photos
