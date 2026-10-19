@@ -2,12 +2,8 @@
 
 import { usePaginatedQuery, useQuery } from "convex/react";
 import { Wallet } from "lucide-react";
+import dynamic from "next/dynamic";
 
-import { Bar } from "@/components/charts/bar";
-import { BarChart } from "@/components/charts/bar-chart";
-import { BarXAxis } from "@/components/charts/bar-x-axis";
-import { Grid } from "@/components/charts/grid";
-import { ChartTooltip } from "@/components/charts/tooltip";
 import { formatStayDate } from "@/components/listing/price-breakdown";
 import { Button } from "@/components/ui/button";
 import { Surface } from "@/components/ui/surface";
@@ -69,6 +65,18 @@ function monthDate(month: string) {
 function percent(rate: number) {
   return `${Math.round(rate * 100)}%`;
 }
+
+function ChartPlaceholder() {
+  return (
+    <div className="aspect-[2/1] animate-pulse rounded-[0.8rem] bg-checkin-mist/60 motion-reduce:animate-none" />
+  );
+}
+
+// visx and motion are only needed here, so they load after the figures.
+const EarningsBarChart = dynamic(() => import("./earnings-bar-chart"), {
+  ssr: false,
+  loading: ChartPlaceholder,
+});
 
 export function HostEarnings() {
   const profileReady = useProfileReady();
@@ -163,20 +171,14 @@ export function HostEarnings() {
           caption="Each night counts in the month it falls in; cleaning fees count in the arrival month. Five months back to six ahead."
           loading={earnings === undefined}
           chart={
-            <BarChart data={chartData} xDataKey="month" aspectRatio="2 / 1">
-              <Grid horizontal />
-              <Bar dataKey="earned" fill="var(--chart-1)" lineCap={4} />
-              <BarXAxis />
-              <ChartTooltip
-                rows={(point) => [
-                  {
-                    color: "var(--chart-1)",
-                    label: String(point.label),
-                    value: formatNightlyPrice(Number(point.earnedCents)),
-                  },
-                ]}
-              />
-            </BarChart>
+            <EarningsBarChart
+              data={chartData}
+              dataKey="earned"
+              color="var(--chart-1)"
+              formatValue={(point) =>
+                formatNightlyPrice(Number(point.earnedCents))
+              }
+            />
           }
           table={
             <table className="w-full text-sm">
@@ -229,20 +231,12 @@ export function HostEarnings() {
           }
           loading={earnings === undefined}
           chart={
-            <BarChart data={chartData} xDataKey="month" aspectRatio="2 / 1">
-              <Grid horizontal />
-              <Bar dataKey="occupancy" fill="var(--chart-3)" lineCap={4} />
-              <BarXAxis />
-              <ChartTooltip
-                rows={(point) => [
-                  {
-                    color: "var(--chart-3)",
-                    label: String(point.label),
-                    value: percent(Number(point.occupancyRate)),
-                  },
-                ]}
-              />
-            </BarChart>
+            <EarningsBarChart
+              data={chartData}
+              dataKey="occupancy"
+              color="var(--chart-3)"
+              formatValue={(point) => percent(Number(point.occupancyRate))}
+            />
           }
           table={
             <table className="w-full text-sm">
@@ -405,11 +399,7 @@ function ChartCard({
           <p className="mt-1 text-sm text-checkin-muted">{caption}</p>
         </figcaption>
         <div aria-hidden className="mt-4">
-          {loading ? (
-            <div className="aspect-[2/1] animate-pulse rounded-[0.8rem] bg-checkin-mist/60 motion-reduce:animate-none" />
-          ) : (
-            chart
-          )}
+          {loading ? <ChartPlaceholder /> : chart}
         </div>
         <details className="mt-4">
           <summary className="cursor-pointer text-sm font-semibold underline underline-offset-4">

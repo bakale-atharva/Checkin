@@ -28,10 +28,23 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <a
+          href="#content"
+          className="sr-only z-[60] rounded-[0.7rem] bg-checkin-ink px-4 py-3 text-sm font-semibold text-checkin-canvas focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:outline-none focus:ring-3 focus:ring-checkin-signal/45"
+        >
+          Skip to content
+        </a>
         <ClerkProvider>
           <ConvexClientProvider>
             <SiteHeader />
-            {children}
+            {/* Skip-link target; pages render their own <main> inside. */}
+            <div
+              id="content"
+              tabIndex={-1}
+              className="flex flex-1 flex-col focus:outline-none"
+            >
+              {children}
+            </div>
           </ConvexClientProvider>
         </ClerkProvider>
       </body>

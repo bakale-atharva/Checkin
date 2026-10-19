@@ -18,7 +18,7 @@ This file gives Claude Code the context it needs to work in this repo. Keep it s
 - **Install:** `pnpm i`
 - **Dev / run:** `(Frontend) pnpm run frontend, (Backend) pnpm run backend`
 - **Build:** `pnpm run build`
-- **Test:** `pnpm test`
+- **Test:** `pnpm test` (unit), `pnpm test:integration` (dedicated Convex test deployment), `pnpm test:e2e` (Playwright; see README)
 - **Lint / format:** `pnpm run lint`
 
 ## Test placement

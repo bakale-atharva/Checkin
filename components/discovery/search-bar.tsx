@@ -379,7 +379,7 @@ function StepButton({
       aria-label={label}
       disabled={disabled}
       onClick={onClick}
-      className="grid size-9 place-items-center rounded-full border border-checkin-line text-checkin-ink transition-colors hover:bg-checkin-mist/50 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-checkin-signal/35 disabled:opacity-35 [&_svg]:size-3.5"
+      className="grid size-9 pointer-coarse:size-11 place-items-center rounded-full border border-checkin-line text-checkin-ink transition-colors hover:bg-checkin-mist/50 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-checkin-signal/35 disabled:opacity-35 [&_svg]:size-3.5"
     >
       {children}
     </button>

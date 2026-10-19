@@ -237,7 +237,7 @@ function WishlistPanel({
       <button
         type="button"
         onClick={onDone}
-        className="mt-2 min-h-9 w-full rounded-[0.7rem] text-xs font-semibold text-checkin-muted hover:text-checkin-ink"
+        className="mt-2 min-h-9 pointer-coarse:min-h-11 w-full rounded-[0.7rem] text-xs font-semibold text-checkin-muted hover:text-checkin-ink"
       >
         Done
       </button>

@@ -11,6 +11,7 @@
     "test": "node --import tsx --test \"lib/**/*.test.ts\"",
     "test:integration": "node --env-file-if-exists=.env.test.local --import tsx --test --test-concurrency=1 \"convex/**/*.integration.test.ts\"",
     "test:integration:deploy": "node --env-file=.env.test.local node_modules/convex/bin/main.js deploy -y",
+    "test:e2e": "playwright test",
     "seed": "convex run listingSeeds:seedDemo",
     "seed:reset": "convex run listingSeeds:resetDemo",
     "format": "prettier --write .",
@@ -38,7 +39,10 @@
     "tailwind-merge": "^3.7.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
+    "@clerk/testing": "^2.2.47",
     "@eslint/compat": "^2.1.1",
+    "@playwright/test": "^1.64.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

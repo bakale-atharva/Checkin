@@ -100,7 +100,7 @@ export function FiltersDialog({
               type="button"
               aria-label="Close filters"
               onClick={() => dialogRef.current?.close()}
-              className="grid size-10 place-items-center rounded-full hover:bg-checkin-mist/50 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-checkin-signal/35"
+              className="grid size-11 place-items-center rounded-full hover:bg-checkin-mist/50 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-checkin-signal/35"
             >
               <X aria-hidden className="size-4" />
             </button>

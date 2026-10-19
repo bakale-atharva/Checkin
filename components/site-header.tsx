@@ -19,7 +19,7 @@ import { badgeCount } from "@/lib/messaging/inbox-presentation";
 import { cn } from "@/lib/utils";
 
 const navLink =
-  "inline-flex min-h-10 items-center gap-2 rounded-[0.7rem] px-3 text-sm font-semibold text-checkin-ink transition-colors hover:bg-checkin-mist/60 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-checkin-signal/35";
+  "inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-[0.7rem] px-3 text-sm font-semibold text-checkin-ink transition-colors hover:bg-checkin-mist/60 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-checkin-signal/35";
 
 export function SiteHeader() {
   const pathname = usePathname();
@@ -37,7 +37,7 @@ export function SiteHeader() {
       >
         <Link
           href="/"
-          className="text-xl font-bold tracking-[-0.06em] text-checkin-ink"
+          className="inline-flex min-h-11 items-center rounded-[0.7rem] text-xl font-bold tracking-[-0.06em] text-checkin-ink focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-checkin-signal/35"
         >
           Checkin
           {hosting ? (
@@ -66,7 +66,11 @@ export function SiteHeader() {
             <Link
               href="/trips"
               aria-current={current("/trips")}
-              className={cn(navLink, current("/trips") && "bg-checkin-mist/60")}
+              className={cn(
+                navLink,
+                "max-sm:hidden",
+                current("/trips") && "bg-checkin-mist/60",
+              )}
             >
               <Luggage aria-hidden className="size-4" />
               <span className="max-sm:sr-only">Trips</span>
@@ -76,6 +80,7 @@ export function SiteHeader() {
               aria-current={current("/wishlists")}
               className={cn(
                 navLink,
+                "max-sm:hidden",
                 current("/wishlists") && "bg-checkin-mist/60",
               )}
             >
@@ -84,7 +89,21 @@ export function SiteHeader() {
             </Link>
             <UnreadLinks current={current} />
             <span className="ml-1">
-              <UserButton />
+              {/* Narrow headers hide Trips and Wishlists; they stay reachable here. */}
+              <UserButton>
+                <UserButton.MenuItems>
+                  <UserButton.Link
+                    label="Trips"
+                    href="/trips"
+                    labelIcon={<Luggage aria-hidden className="size-4" />}
+                  />
+                  <UserButton.Link
+                    label="Wishlists"
+                    href="/wishlists"
+                    labelIcon={<Heart aria-hidden className="size-4" />}
+                  />
+                </UserButton.MenuItems>
+              </UserButton>
             </span>
           </Show>
           <Show when="signed-out">
@@ -92,7 +111,7 @@ export function SiteHeader() {
               <button className={navLink}>Sign in</button>
             </SignInButton>
             <SignUpButton mode="modal">
-              <button className="h-10 rounded-[0.7rem] bg-checkin-ink px-4 text-sm font-semibold text-checkin-canvas transition-colors hover:bg-checkin-ink/90 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-checkin-signal/35 max-sm:hidden">
+              <button className="h-11 rounded-[0.7rem] bg-checkin-ink px-4 text-sm font-semibold text-checkin-canvas transition-colors hover:bg-checkin-ink/90 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-checkin-signal/35 max-sm:hidden">
                 Sign up
               </button>
             </SignUpButton>

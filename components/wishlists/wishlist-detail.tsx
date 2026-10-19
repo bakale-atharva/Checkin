@@ -94,7 +94,7 @@ export function WishlistDetail() {
     <main className="mx-auto w-full max-w-[90rem] flex-1 px-4 py-10 sm:px-6 lg:px-8">
       <Link
         href="/wishlists"
-        className="inline-flex min-h-10 items-center gap-2 text-sm font-semibold text-checkin-muted hover:text-checkin-ink"
+        className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-checkin-muted hover:text-checkin-ink"
       >
         <ArrowLeft aria-hidden className="size-4" /> Wishlists
       </Link>

@@ -124,13 +124,13 @@ export function AvailabilityCalendar({
           <ChevronRight aria-hidden className="size-5" />
         </button>
       </div>
-      <div ref={gridRef} className="mt-2 grid gap-8 @xl/calendar:grid-cols-2">
+      <div ref={gridRef} className="mt-2 grid gap-8 @2xl/calendar:grid-cols-2">
         {months.map((month, monthIndex) => (
           <table
             key={`${month.year}-${month.month}`}
             className={cn(
               "w-full border-collapse",
-              monthIndex === 1 && "@max-xl/calendar:hidden",
+              monthIndex === 1 && "@max-2xl/calendar:hidden",
             )}
           >
             <caption className="pb-3 text-sm font-semibold">

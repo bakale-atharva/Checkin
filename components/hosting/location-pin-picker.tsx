@@ -63,7 +63,7 @@ export function LocationPinPicker({
         );
         const marker = new mapboxgl.Marker({
           draggable: true,
-          color: "#c65d3a",
+          color: "#b4502f",
         }).setLngLat([start.longitude, start.latitude]);
         if (hasPin) marker.addTo(map);
         marker.on("dragend", () => {

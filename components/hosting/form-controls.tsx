@@ -80,7 +80,7 @@ export function Stepper({
   onChange: (value: number) => void;
 }) {
   const button =
-    "grid size-9 place-items-center rounded-full border border-checkin-line text-lg leading-none transition-colors hover:bg-checkin-mist/60 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-checkin-signal/35 disabled:opacity-35";
+    "grid size-9 pointer-coarse:size-11 place-items-center rounded-full border border-checkin-line text-lg leading-none transition-colors hover:bg-checkin-mist/60 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-checkin-signal/35 disabled:opacity-35";
   return (
     <div className="flex items-center justify-between gap-4 py-3">
       <span id={`${id}-label`} className="font-medium">
