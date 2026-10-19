@@ -89,6 +89,14 @@ describe("dashboards, messaging, and reviews against the test deployment", () =>
       ).page.length,
       0,
     );
+    assert.equal(
+      await errorCode(
+        outsider.client.run(api.dashboard.conversationDetail, {
+          conversationId,
+        }),
+      ),
+      "CONVERSATION_FORBIDDEN",
+    );
     const messages = await guest.client.run(
       api.dashboard.conversationMessages,
       { conversationId, paginationOpts: firstPage },
@@ -97,6 +105,41 @@ describe("dashboards, messaging, and reviews against the test deployment", () =>
       messages.page.map((message) => message.body),
       ["Welcome!"],
     );
+
+    // Each participant sees the stay from their own side.
+    const guestDetail = await guest.client.run(
+      api.dashboard.conversationDetail,
+      { conversationId },
+    );
+    assert.equal(guestDetail.reservation?.reservationId, reservation._id);
+    assert.equal(guestDetail.reservation?.role, "guest");
+    assert.equal(guestDetail.reservation?.checkIn, reservation.checkIn);
+    assert.equal(
+      (
+        await host.client.run(api.dashboard.conversationDetail, {
+          conversationId,
+        })
+      ).reservation?.role,
+      "host",
+    );
+    const guestInbox = await guest.client.run(api.dashboard.inbox, {
+      paginationOpts: firstPage,
+    });
+    assert.equal(
+      guestInbox.page.find((entry) => entry.conversationId === conversationId)
+        ?.reservation?.role,
+      "guest",
+    );
+    const guestNotifications = await guest.client.run(
+      api.dashboard.notifications,
+      { paginationOpts: firstPage },
+    );
+    const messageNotification = guestNotifications.page.find(
+      (notification) => notification.conversationId === conversationId,
+    );
+    assert.equal(messageNotification?.kind, "message");
+    assert.equal(messageNotification?.context?.role, "guest");
+    assert.equal(messageNotification?.context?.reservationId, reservation._id);
   });
 
   test("tracks unread positions per participant", async () => {
@@ -275,6 +318,9 @@ describe("dashboards, messaging, and reviews against the test deployment", () =>
     );
     assert.equal(hostView.counterpartSubmitted, true);
     assert.equal(hostView.counterpart, null);
+    assert.equal(hostView.role, "host");
+    assert.equal(hostView.status, "completed");
+    assert.equal(typeof hostView.listingTitle, "string");
     assert.equal(
       (await host.client.run(api.listings.myListings, {})).find(
         (listing) => listing._id === listingId,

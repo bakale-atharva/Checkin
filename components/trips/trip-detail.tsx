@@ -8,6 +8,8 @@ import { useParams } from "next/navigation";
 import { ReservationProgress } from "@/components/booking/reservation-progress";
 import { ListingPhoto } from "@/components/discovery/listing-photo";
 import { SimulationBadge } from "@/components/hosting/form-controls";
+import { MessageButton } from "@/components/messaging/message-button";
+import { ReviewPanel } from "@/components/reviews/review-panel";
 import {
   formatLocalDateTime,
   PriceBreakdown,
@@ -102,14 +104,25 @@ function TripBody({ trip }: { trip: TripDetailData }) {
             {listing?.title}
             {trip.hostFirstName ? ` · Hosted by ${trip.hostFirstName}` : ""}
           </p>
-          {listing?.bookable ? (
-            <Link
-              href={`/listings/${listing.id}`}
-              className="mt-1 inline-block text-sm font-semibold underline underline-offset-4"
-            >
-              View listing
-            </Link>
-          ) : null}
+          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+            <MessageButton
+              reservationId={reservation._id}
+              label={
+                trip.hostFirstName
+                  ? `Message ${trip.hostFirstName}`
+                  : "Message host"
+              }
+              size="sm"
+            />
+            {listing?.bookable ? (
+              <Link
+                href={`/listings/${listing.id}`}
+                className="inline-block text-sm font-semibold underline underline-offset-4"
+              >
+                View listing
+              </Link>
+            ) : null}
+          </div>
         </div>
       </div>
 
@@ -184,6 +197,15 @@ function TripBody({ trip }: { trip: TripDetailData }) {
           </section>
 
           <CancellationSection trip={trip} timezone={timezone} />
+
+          {reservation.status === "completed" ? (
+            <section aria-labelledby="review-heading" className="space-y-3">
+              <h2 id="review-heading" className="text-xl font-semibold">
+                Review
+              </h2>
+              <ReviewPanel reservationId={reservation._id} />
+            </section>
+          ) : null}
         </div>
 
         <aside aria-label="Payment summary" className="space-y-4">

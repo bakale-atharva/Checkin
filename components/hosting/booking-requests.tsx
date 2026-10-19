@@ -4,6 +4,7 @@ import { useMutation, usePaginatedQuery } from "convex/react";
 import { Inbox } from "lucide-react";
 import { useState } from "react";
 
+import { MessageButton } from "@/components/messaging/message-button";
 import { Button } from "@/components/ui/button";
 import { useProfileReady } from "@/components/use-profile-ready";
 import { api } from "@/convex/_generated/api";
@@ -121,8 +122,20 @@ export function BookingRequests() {
                         : ""}
                   </p>
                 </div>
-                {awaitingPayment ? null : (
-                  <div className="flex gap-2">
+                {awaitingPayment ? (
+                  <MessageButton
+                    reservationId={request._id}
+                    label="Message guest"
+                    size="sm"
+                  />
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    <MessageButton
+                      reservationId={request._id}
+                      label="Message"
+                      variant="quiet"
+                      size="sm"
+                    />
                     <Button
                       type="button"
                       variant="outline"
