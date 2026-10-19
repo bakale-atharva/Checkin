@@ -698,6 +698,26 @@ const publicListingValidator = v.object({
       position: v.number(),
     }),
   ),
+  publishedRating: v.optional(v.number()),
+  // Only a first name and join date: hosts' contact details stay private.
+  host: v.object({
+    firstName: v.union(v.string(), v.null()),
+    imageUrl: v.union(v.string(), v.null()),
+    joinedAt: v.number(),
+  }),
+  reviewSummary: v.union(
+    v.object({
+      count: v.number(),
+      overall: v.number(),
+      cleanliness: v.number(),
+      accuracy: v.number(),
+      checkIn: v.number(),
+      communication: v.number(),
+      location: v.number(),
+      value: v.number(),
+    }),
+    v.null(),
+  ),
 });
 
 export const getPublished = query({
@@ -707,12 +727,22 @@ export const getPublished = query({
     const listing = await ctx.db.get(args.listingId);
     if (!listing || listing.status !== "published" || listing.bookingSuspended)
       return null;
-    const photos = await ctx.db
-      .query("listingPhotos")
-      .withIndex("by_listing_id_and_position", (q) =>
-        q.eq("listingId", listing._id),
-      )
-      .take(MAX_LISTING_PHOTOS);
+    const [photos, host, aggregate] = await Promise.all([
+      ctx.db
+        .query("listingPhotos")
+        .withIndex("by_listing_id_and_position", (q) =>
+          q.eq("listingId", listing._id),
+        )
+        .take(MAX_LISTING_PHOTOS),
+      ctx.db.get(listing.ownerProfileId),
+      // Aggregates only ever include revealed reviews.
+      ctx.db
+        .query("reviewAggregates")
+        .withIndex("by_listing_id", (q) => q.eq("listingId", listing._id))
+        .unique(),
+    ]);
+    const average = (total: number) =>
+      aggregate && aggregate.count > 0 ? total / aggregate.count : 0;
     return {
       _id: listing._id,
       title: listing.title,
@@ -741,6 +771,95 @@ export const getPublished = query({
           position: photo.position,
         })),
       ),
+      publishedRating: listing.publishedRating,
+      host: {
+        firstName: host?.name?.split(" ")[0] ?? null,
+        imageUrl: host?.imageUrl ?? null,
+        joinedAt: host?.createdAt ?? listing.createdAt,
+      },
+      reviewSummary:
+        aggregate && aggregate.count > 0
+          ? {
+              count: aggregate.count,
+              overall: average(aggregate.overallTotal),
+              cleanliness: average(aggregate.cleanlinessTotal),
+              accuracy: average(aggregate.accuracyTotal),
+              checkIn: average(aggregate.checkInTotal),
+              communication: average(aggregate.communicationTotal),
+              location: average(aggregate.locationTotal),
+              value: average(aggregate.valueTotal),
+            }
+          : null,
+    };
+  },
+});
+
+/**
+ * Which nights of a published listing can't be booked, plus nightly price
+ * overrides, for the guest calendar. Reservations are reduced to bare dates so
+ * nothing about other guests leaks.
+ */
+export const publicAvailability = query({
+  args: {
+    listingId: v.id("listings"),
+    startDate: v.string(),
+    endDate: v.string(),
+  },
+  returns: v.union(
+    v.object({
+      unavailableDates: v.array(v.string()),
+      priceOverrides: v.array(
+        v.object({ date: v.string(), nightlyPriceCents: v.number() }),
+      ),
+    }),
+    v.null(),
+  ),
+  handler: async (ctx, args) => {
+    if (
+      !isValidStayDate(args.startDate) ||
+      !isValidStayDate(args.endDate) ||
+      args.startDate >= args.endDate
+    )
+      throwInvalidInput();
+    const span =
+      (Date.parse(`${args.endDate}T00:00:00Z`) -
+        Date.parse(`${args.startDate}T00:00:00Z`)) /
+      86_400_000;
+    if (span > MAX_LISTING_CALENDAR_DAYS) throwInvalidInput();
+    const listing = await ctx.db.get(args.listingId);
+    if (!listing || listing.status !== "published" || listing.bookingSuspended)
+      return null;
+    const inRange = (table: "reservationNights" | "blockedDates") =>
+      ctx.db
+        .query(table)
+        .withIndex("by_listing_id_and_date", (q) =>
+          q
+            .eq("listingId", listing._id)
+            .gte("date", args.startDate)
+            .lt("date", args.endDate),
+        )
+        .take(MAX_LISTING_CALENDAR_DAYS);
+    const [reserved, blocked, overrides] = await Promise.all([
+      inRange("reservationNights"),
+      inRange("blockedDates"),
+      ctx.db
+        .query("nightlyPriceOverrides")
+        .withIndex("by_listing_id_and_date", (q) =>
+          q
+            .eq("listingId", listing._id)
+            .gte("date", args.startDate)
+            .lt("date", args.endDate),
+        )
+        .take(MAX_LISTING_CALENDAR_DAYS),
+    ]);
+    return {
+      unavailableDates: [
+        ...new Set([...reserved, ...blocked].map((night) => night.date)),
+      ].sort(),
+      priceOverrides: overrides.map((override) => ({
+        date: override.date,
+        nightlyPriceCents: override.nightlyPriceCents,
+      })),
     };
   },
 });
