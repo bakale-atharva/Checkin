@@ -1,10 +1,11 @@
 "use client";
 
-import { useConvexAuth, useMutation, usePaginatedQuery } from "convex/react";
+import { useMutation, usePaginatedQuery } from "convex/react";
 import { Inbox } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { useProfileReady } from "@/components/use-profile-ready";
 import { api } from "@/convex/_generated/api";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
 import { formatNightlyPrice } from "@/lib/discovery/catalog";
@@ -36,10 +37,10 @@ function formatExpiry(expiresAt: number | undefined, now: number) {
 }
 
 export function BookingRequests() {
-  const { isAuthenticated } = useConvexAuth();
+  const profileReady = useProfileReady();
   const { results, status, loadMore } = usePaginatedQuery(
     api.dashboard.hostBookingRequests,
-    isAuthenticated ? {} : "skip",
+    profileReady ? {} : "skip",
     { initialNumItems: 10 },
   );
   const respond = useMutation(api.reservations.respondToRequest);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useConvexAuth, useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { Check, ChevronLeft, CircleAlert, Plus, X } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
@@ -8,6 +8,7 @@ import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Surface } from "@/components/ui/surface";
+import { useProfileReady } from "@/components/use-profile-ready";
 import { api } from "@/convex/_generated/api";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
 import {
@@ -199,10 +200,10 @@ function stepFields(step: WizardStepId, draft: Draft): StepResult | null {
 
 export function ListingWizard() {
   const { listingId } = useParams<{ listingId: Id<"listings"> }>();
-  const { isAuthenticated } = useConvexAuth();
+  const profileReady = useProfileReady();
   const data = useQuery(
     api.listings.getOwned,
-    isAuthenticated ? { listingId } : "skip",
+    profileReady ? { listingId } : "skip",
   );
 
   if (data === undefined) {

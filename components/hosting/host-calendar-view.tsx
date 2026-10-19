@@ -1,12 +1,13 @@
 "use client";
 
-import { useConvexAuth, useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Surface } from "@/components/ui/surface";
+import { useProfileReady } from "@/components/use-profile-ready";
 import { api } from "@/convex/_generated/api";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
 import { formatNightlyPrice } from "@/lib/discovery/catalog";
@@ -37,10 +38,10 @@ const reservationLabels: Record<string, string> = {
 };
 
 export function HostCalendarView() {
-  const { isAuthenticated } = useConvexAuth();
+  const profileReady = useProfileReady();
   const listings = useQuery(
     api.listings.myListings,
-    isAuthenticated ? {} : "skip",
+    profileReady ? {} : "skip",
   );
   const [today] = useState(() => localToday());
   const [start, setStart] = useState(today);
@@ -200,10 +201,10 @@ export function HostCalendarView() {
 }
 
 function useListingDays(listingId: Id<"listings">, dates: string[]) {
-  const { isAuthenticated } = useConvexAuth();
+  const profileReady = useProfileReady();
   const entries = useQuery(
     api.dashboard.hostCalendar,
-    isAuthenticated
+    profileReady
       ? {
           listingId,
           startDate: dates[0]!,

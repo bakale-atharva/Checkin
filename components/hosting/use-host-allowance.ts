@@ -1,8 +1,9 @@
 "use client";
 
-import { useConvexAuth, useQuery } from "convex/react";
+import { useQuery } from "convex/react";
 import { useState } from "react";
 
+import { useProfileReady } from "@/components/use-profile-ready";
 import { api } from "@/convex/_generated/api";
 import { publicationAllowance } from "@/lib/billing/host-plan-policy";
 
@@ -11,14 +12,14 @@ import { publicationAllowance } from "@/lib/billing/host-plan-policy";
  * limit on publish; this mirrors it so the UI can explain it beforehand.
  */
 export function useHostAllowance() {
-  const { isAuthenticated } = useConvexAuth();
+  const profileReady = useProfileReady();
   const listings = useQuery(
     api.listings.myListings,
-    isAuthenticated ? {} : "skip",
+    profileReady ? {} : "skip",
   );
   const subscription = useQuery(
     api.billing.currentHostSubscription,
-    isAuthenticated ? {} : "skip",
+    profileReady ? {} : "skip",
   );
   const [now] = useState(() => Date.now());
   const loaded = listings !== undefined && subscription !== undefined;

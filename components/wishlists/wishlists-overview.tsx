@@ -1,11 +1,12 @@
 "use client";
 
-import { useConvexAuth, useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { Heart, Plus } from "lucide-react";
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/button";
+import { useProfileReady } from "@/components/use-profile-ready";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 
@@ -16,10 +17,10 @@ type WishlistSummary = {
 };
 
 export function WishlistsOverview() {
-  const { isAuthenticated } = useConvexAuth();
+  const profileReady = useProfileReady();
   const wishlists = useQuery(
     api.dashboard.listWishlists,
-    isAuthenticated ? {} : "skip",
+    profileReady ? {} : "skip",
   ) as WishlistSummary[] | undefined;
   const createWishlist = useMutation(api.dashboard.createWishlist);
   const [name, setName] = useState("");
