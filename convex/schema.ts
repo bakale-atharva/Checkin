@@ -77,7 +77,9 @@ export default defineSchema({
     .index("by_seed_key", ["seedKey"]),
   listingPhotos: defineTable({
     listingId: v.id("listings"),
-    storageId: v.id("_storage"),
+    // Exactly one source: a host upload, or a direct link for seeded demo data.
+    storageId: v.optional(v.id("_storage")),
+    externalUrl: v.optional(v.string()),
     altText: v.optional(v.string()),
     position: v.number(),
     createdAt: v.number(),
