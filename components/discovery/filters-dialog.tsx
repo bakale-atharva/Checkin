@@ -86,7 +86,7 @@ export function FiltersDialog({
       <dialog
         ref={dialogRef}
         aria-labelledby={`${id}-title`}
-        className="m-auto w-[min(36rem,calc(100vw-2rem))] max-h-[min(44rem,calc(100dvh-2rem))] rounded-[1.25rem] border border-checkin-line bg-checkin-paper p-0 text-checkin-ink shadow-[0_30px_80px_rgb(23_35_31/0.25)] backdrop:bg-checkin-ink/40 backdrop:backdrop-blur-sm"
+        className="m-auto w-[min(36rem,calc(100vw-2rem))] overscroll-contain max-h-[min(44rem,calc(100dvh-2rem))] rounded-[1.25rem] border border-checkin-line bg-checkin-paper p-0 text-checkin-ink shadow-[0_30px_80px_rgb(23_35_31/0.25)] backdrop:bg-checkin-ink/40 backdrop:backdrop-blur-sm"
       >
         <form onSubmit={apply} className="flex max-h-[inherit] flex-col">
           <header className="flex items-center justify-between border-b border-checkin-line px-5 py-4">

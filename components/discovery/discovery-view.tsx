@@ -41,7 +41,7 @@ export function DiscoveryView() {
   const { isAuthenticated } = useConvexAuth();
   const [hoveredId, setHoveredId] = useState<string>();
   const [selectedId, setSelectedId] = useState<string>();
-  const [view, setView] = useState<"list" | "map">("list");
+  const view = filters.view ?? "list";
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   const listingIds = useMemo(
@@ -90,7 +90,7 @@ export function DiscoveryView() {
 
   function selectFromMap(listingId: string) {
     setSelectedId(listingId);
-    setView("list");
+    updateFilters({ view: undefined });
     window.requestAnimationFrame(() =>
       document
         .getElementById(`listing-${listingId}`)
@@ -99,7 +99,7 @@ export function DiscoveryView() {
   }
 
   function resetFilters() {
-    setFilters({ amenities: [] });
+    setFilters({ amenities: [], view: filters.view });
   }
 
   return (
@@ -246,10 +246,10 @@ export function DiscoveryView() {
         </aside>
       </div>
 
-      <div className="pointer-events-none fixed inset-x-0 bottom-6 z-40 flex justify-center lg:hidden">
+      <div className="pointer-events-none fixed inset-x-0 bottom-[calc(1.5rem+env(safe-area-inset-bottom))] z-40 flex justify-center lg:hidden">
         <Button
           onClick={() =>
-            setView((value) => (value === "list" ? "map" : "list"))
+            updateFilters({ view: view === "list" ? "map" : undefined })
           }
           className="pointer-events-auto rounded-full px-5 shadow-[0_12px_30px_rgb(23_35_31/0.3)]"
         >

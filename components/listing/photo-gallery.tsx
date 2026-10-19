@@ -104,9 +104,9 @@ export function PhotoGallery({
         aria-label={`${title} photos`}
         onKeyDown={onKeyDown}
         onClose={() => openerRef.current?.focus()}
-        className="m-0 h-dvh max-h-none w-screen max-w-none bg-checkin-ink p-0 text-checkin-canvas backdrop:bg-checkin-ink/80"
+        className="m-0 h-dvh max-h-none w-screen max-w-none overscroll-contain bg-checkin-ink p-0 text-checkin-canvas backdrop:bg-checkin-ink/80"
       >
-        <div className="flex h-full flex-col">
+        <div className="flex h-full flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
           <div className="flex items-center justify-between px-4 py-3">
             <p aria-live="polite" className="text-sm tabular-nums">
               {index + 1} / {photos.length}

@@ -1,5 +1,5 @@
 import { ClerkProvider } from "@clerk/nextjs";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import { SiteHeader } from "@/components/site-header";
@@ -19,6 +19,12 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Checkin — stays, clearly",
   description: "Search, compare, and reserve stays with confidence.",
+};
+
+export const viewport: Viewport = {
+  // Matches --checkin-canvas.
+  themeColor: "#f7f4ee",
+  colorScheme: "light",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
