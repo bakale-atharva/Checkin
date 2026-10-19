@@ -34,6 +34,9 @@ type ReviewStatus = {
 type GuestRatings = Record<(typeof GUEST_RATING_KEYS)[number], number>;
 type HostRatings = Record<(typeof HOST_RATING_KEYS)[number], number>;
 
+const MAX_COMMENT_LENGTH = 2_000;
+const countFormat = new Intl.NumberFormat("en-US");
+
 const RATING_LABELS: Record<string, string> = {
   overall: "Overall experience",
   cleanliness: "Cleanliness",
@@ -250,13 +253,14 @@ function ReviewForm({
         <textarea
           id="review-comment"
           value={comment}
-          maxLength={2_000}
+          maxLength={MAX_COMMENT_LENGTH}
           onChange={(event) => setComment(event.target.value)}
           aria-describedby="review-comment-count"
           className="min-h-32 w-full rounded-[0.7rem] border border-checkin-line bg-checkin-paper px-3 py-2.5 text-sm leading-relaxed focus-visible:border-checkin-ink focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-checkin-signal/25"
         />
         <p id="review-comment-count" className="text-xs text-checkin-muted">
-          {comment.length.toLocaleString()} / 2,000 characters
+          {countFormat.format(comment.length)} /{" "}
+          {countFormat.format(MAX_COMMENT_LENGTH)} characters
         </p>
       </div>
 

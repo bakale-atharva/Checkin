@@ -6,6 +6,7 @@ import Link from "next/link";
 import { PropertyFrame } from "@/components/ui/property-frame";
 import {
   formatNightlyPrice,
+  formatRating,
   propertyTypeLabels,
 } from "@/lib/discovery/catalog";
 import { cn } from "@/lib/utils";
@@ -85,7 +86,7 @@ export function ListingCard({
               <>
                 <Star aria-hidden className="size-3.5 fill-checkin-ink" />
                 <span className="sr-only">Rated</span>
-                {rating.toFixed(2)}
+                {formatRating(rating)}
               </>
             ) : (
               <span className="text-checkin-muted">New</span>

@@ -27,7 +27,7 @@ import {
   todayIn,
   type StaySelection,
 } from "@/lib/booking/stay-selection";
-import { propertyTypeLabels } from "@/lib/discovery/catalog";
+import { formatRating, propertyTypeLabels } from "@/lib/discovery/catalog";
 import { ApproximateMap } from "./approximate-map";
 import { AvailabilityCalendar } from "./availability-calendar";
 import { BookingWidget, MobileBookingBar } from "./booking-widget";
@@ -191,7 +191,7 @@ export function ListingDetail() {
               >
                 <Star aria-hidden className="size-3.5 fill-checkin-ink" />
                 <span className="sr-only">Rated</span>
-                {rating.toFixed(2)}
+                {formatRating(rating)}
                 {listing.reviewSummary
                   ? ` · ${listing.reviewSummary.count} reviews`
                   : ""}
