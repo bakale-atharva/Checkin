@@ -30,6 +30,34 @@ Never commit deploy keys, `.env*` files, or values copied from them.
 - To make the personal dev deployment a demo environment:
   `npx convex env set CHECKIN_DEPLOYMENT_ROLE demo` (default dev target).
 
+## Demo seed data
+
+`convex/listingSeeds.ts` seeds fictional, browsable inventory into a `test` or
+`demo` deployment. It refuses to run on `standard`. Each seed creates:
+
+- 6 hosts and 10 guests. Their token identifiers use the
+  `seed.checkin.invalid` issuer, so they can never sign in.
+- 60 listings across the five seeded destinations: 52 published, 6 drafts and
+  2 archived. They cover every discovery category, type, booking mode and amenity.
+- Free-license Unsplash photos stored as direct links (`listingPhotos.externalUrl`).
+  The allowed links are defined in `lib/listings/seed-catalog.ts`.
+- Blocked dates and weekend price overrides relative to the seed date.
+- Completed past stays with charges, payouts and revealed two-way reviews,
+  which set published ratings. Also a few upcoming confirmed stays.
+
+Everything is deterministic and keyed by a seed key (default `demo`):
+
+```sh
+npx convex env set CHECKIN_DEPLOYMENT_ROLE demo   # once, on the dev deployment
+pnpm seed                                         # no-op if this key already exists
+pnpm seed:reset                                   # removes only this key's records
+pnpm seed '{"seedKey":"demo-2"}'                  # a second, independent set
+```
+
+Dates are relative to the day you seed, so re-seed (reset, then seed) to
+refresh an old demo. A reset leaves wishlist entries that real users created
+for seeded stays; wishlist queries skip listings that no longer exist.
+
 ## Integration tests
 
 `pnpm test:integration` runs `convex/*.integration.test.ts` with Node's test
