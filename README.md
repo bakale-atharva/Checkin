@@ -65,14 +65,16 @@ The project is in active development. The current release establishes authentica
 
 ## Commands
 
-| Command             | Purpose                                                |
-| ------------------- | ------------------------------------------------------ |
-| `pnpm run frontend` | Start the Next.js development server.                  |
-| `pnpm run backend`  | Start Convex development.                              |
-| `pnpm run build`    | Create a production Next.js build.                     |
-| `pnpm start`        | Run the production server after a build.               |
-| `pnpm run lint`     | Run ESLint.                                            |
-| `pnpm test`         | Run isolated TypeScript tests with Node's test runner. |
+| Command                 | Purpose                                                          |
+| ----------------------- | ---------------------------------------------------------------- |
+| `pnpm run frontend`     | Start the Next.js development server.                            |
+| `pnpm run backend`      | Start Convex development.                                        |
+| `pnpm run build`        | Create a production Next.js build.                               |
+| `pnpm start`            | Run the production server after a build.                         |
+| `pnpm run lint`         | Run ESLint.                                                      |
+| `pnpm test`             | Run isolated TypeScript tests with Node's test runner.           |
+| `pnpm test:integration` | Run backend checks against the dedicated Convex test deployment. |
+| `pnpm test:e2e`         | Run Playwright journeys, accessibility, and reflow checks.       |
 
 ## Authentication and authorization
 
@@ -85,8 +87,10 @@ For manual verification, use three separate Clerk test accounts: a guest, a host
 This project deliberately does **not** use Vitest or `convex-test`.
 
 - `pnpm test` is reserved for isolated logic such as pricing, dates, and cancellation policies, using Node's built-in test runner with `tsx`.
-- A future `pnpm test:integration` command will target a dedicated, non-production Convex deployment and must fail early when that target is not configured.
-- A future `pnpm test:e2e` command will cover browser journeys, responsive behavior, and accessibility with Playwright.
+- `pnpm test:integration` targets a dedicated, non-production Convex deployment and fails early when that target is not configured. See `docs/backend-operations.md`.
+- `pnpm test:e2e` runs Playwright journeys on desktop and a Pixel 7 profile: discovery, listing detail, booking and cancellation, hosting drafts, protected-route redirects, error and offline states, axe WCAG 2.2 AA scans, and 320px / 200%-zoom reflow. Journey files sit beside their routes as `app/**/*.e2e.ts`.
+  - It runs against `E2E_BASE_URL` (default `http://localhost:3000`, reusing a running dev server) and therefore that server's Convex deployment. The booking journey creates and then cancels a simulated reservation.
+  - Signed-in journeys sign in through `@clerk/testing` as a Clerk **development-instance** test user named by `E2E_CLERK_USER_EMAIL` in the gitignored `.env.test.local` (for example `checkin-e2e+clerk_test@example.com`). Without it, those journeys are skipped. Run `pnpm exec playwright install chromium` once before the first run.
 
 Never point tests or fixtures at production data.
 
