@@ -11,6 +11,7 @@ import {
 import { publicationAllowance } from "../lib/billing/host-plan-policy";
 import { listingSearchFields } from "../lib/search/listing-search-fields";
 import { assertProfileOwner, requireProfile } from "./auth";
+import { deleteListingPhotoFile, listingPhotoUrl } from "./photoSources";
 import type { Id } from "./_generated/dataModel";
 import { internalMutation, mutation, query } from "./_generated/server";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
@@ -87,7 +88,8 @@ const photoValidator = v.object({
   _id: v.id("listingPhotos"),
   _creationTime: v.number(),
   listingId: v.id("listings"),
-  storageId: v.id("_storage"),
+  storageId: v.optional(v.id("_storage")),
+  externalUrl: v.optional(v.string()),
   altText: v.optional(v.string()),
   position: v.number(),
   createdAt: v.number(),
@@ -445,7 +447,7 @@ export const removePhoto = mutation({
       throw new ConvexError(listingError(ListingErrorCode.InvalidPhoto));
     }
     await ctx.db.delete(photo._id);
-    await ctx.storage.delete(photo.storageId);
+    await deleteListingPhotoFile(ctx, photo);
     if (listing.coverPhotoId === photo._id) {
       const [nextPhoto] = await ctx.db
         .query("listingPhotos")
@@ -671,7 +673,7 @@ export const getPublished = query({
       photos: await Promise.all(
         photos.map(async (photo) => ({
           _id: photo._id,
-          url: await ctx.storage.getUrl(photo.storageId),
+          url: await listingPhotoUrl(ctx, photo),
           altText: photo.altText,
           position: photo.position,
         })),

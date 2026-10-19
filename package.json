@@ -11,6 +11,8 @@
     "test": "node --import tsx --test \"lib/**/*.test.ts\"",
     "test:integration": "node --env-file-if-exists=.env.test.local --import tsx --test --test-concurrency=1 \"convex/**/*.integration.test.ts\"",
     "test:integration:deploy": "node --env-file=.env.test.local node_modules/convex/bin/main.js deploy -y",
+    "seed": "convex run listingSeeds:seedDemo",
+    "seed:reset": "convex run listingSeeds:resetDemo",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

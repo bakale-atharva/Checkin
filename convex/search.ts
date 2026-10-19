@@ -15,6 +15,7 @@ import { paginationOptsValidator } from "convex/server";
 import { internal } from "./_generated/api";
 import { internalMutation, mutation, query } from "./_generated/server";
 import type { MutationCtx } from "./_generated/server";
+import { listingPhotoUrl } from "./photoSources";
 
 const propertyTypeValidator = v.union(
   v.literal("entire_home"),
@@ -302,7 +303,7 @@ export const page = query({
           : null;
         return photo
           ? {
-              url: await ctx.storage.getUrl(photo.storageId),
+              url: await listingPhotoUrl(ctx, photo),
               altText: photo.altText,
             }
           : { url: null, altText: undefined };

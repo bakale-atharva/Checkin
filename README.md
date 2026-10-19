@@ -104,4 +104,4 @@ Real payments, payouts, taxes, email/SMS delivery, co-host teams, multi-currency
 
 ## Contributing
 
-Use a `codex/` feature branch and pull request for each implementation phase. Do not merge a phase until it has been reviewed and approved. Keep environment files, credentials, generated caches, and other secrets out of Git.
+Use a `codex/` feature branch and pull request for each implementation phase if you're ChatGPT and use `claude/` if you're Claude. Do not merge a phase until it has been reviewed and approved. Keep environment files, credentials, generated caches, and other secrets out of Git.

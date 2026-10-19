@@ -15,6 +15,7 @@ import type * as dashboard from "../dashboard.js";
 import type * as listingSeeds from "../listingSeeds.js";
 import type * as listings from "../listings.js";
 import type * as operations from "../operations.js";
+import type * as photoSources from "../photoSources.js";
 import type * as reservations from "../reservations.js";
 import type * as search from "../search.js";
 import type * as testing from "../testing.js";
@@ -34,6 +35,7 @@ declare const fullApi: ApiFromModules<{
   listingSeeds: typeof listingSeeds;
   listings: typeof listings;
   operations: typeof operations;
+  photoSources: typeof photoSources;
   reservations: typeof reservations;
   search: typeof search;
   testing: typeof testing;

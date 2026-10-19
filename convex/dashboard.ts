@@ -17,6 +17,7 @@ import {
   shouldRevealReviews,
 } from "../lib/reviews/review-policy";
 import { assertProfileOwner, requireProfile } from "./auth";
+import { listingPhotoUrl } from "./photoSources";
 import type { Doc, Id } from "./_generated/dataModel";
 import { internalMutation, mutation, query } from "./_generated/server";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
@@ -98,7 +99,7 @@ async function coverPhotoUrl(ctx: QueryCtx, listing: Doc<"listings">) {
   const photo = listing.coverPhotoId
     ? await ctx.db.get(listing.coverPhotoId)
     : null;
-  return photo ? await ctx.storage.getUrl(photo.storageId) : null;
+  return photo ? await listingPhotoUrl(ctx, photo) : null;
 }
 
 async function currentProfileOrNull(ctx: QueryCtx) {

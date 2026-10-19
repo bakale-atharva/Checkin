@@ -8,6 +8,7 @@ import { TEST_IDENTITY_ISSUER } from "../lib/testing/integration-target";
 import type { Doc, Id, TableNames } from "./_generated/dataModel";
 import { internalMutation, internalQuery } from "./_generated/server";
 import type { MutationCtx } from "./_generated/server";
+import { deleteListingPhotoFile } from "./photoSources";
 
 /**
  * Fixture controls for the dedicated integration-test deployment. Every
@@ -189,7 +190,7 @@ async function deleteListing(ctx: MutationCtx, listing: Doc<"listings">) {
     .query("listingPhotos")
     .withIndex("by_listing_id_and_position", (q) => q.eq("listingId", id))
     .take(CLEANUP_LIMIT)) {
-    await ctx.storage.delete(photo.storageId);
+    await deleteListingPhotoFile(ctx, photo);
     await ctx.db.delete(photo._id);
     deleted += 1;
   }
