@@ -1,23 +1,22 @@
 "use client";
 
-import Link from "next/link";
+import { MessagesSquare } from "lucide-react";
 
-/** Shown when the conversation doesn't exist or the viewer isn't a participant. */
-export default function ConversationError() {
+import { RetryButton, RouteMessage } from "@/components/route-message";
+
+/** Shown when the conversation doesn't exist, the viewer isn't a participant, or it failed to load. */
+export default function ConversationError({ retry }: { retry: () => void }) {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 py-24 text-center">
-      <h1 className="text-2xl font-semibold">
-        We couldn&apos;t open this conversation
-      </h1>
-      <p className="text-checkin-muted">
-        It may belong to a different account, or the link is incomplete.
-      </p>
-      <Link
-        href="/inbox"
-        className="mt-2 inline-flex min-h-11 items-center font-semibold underline underline-offset-4"
-      >
-        Back to messages
-      </Link>
-    </div>
+    // The inbox shell already renders the page's <main>.
+    <RouteMessage
+      as="div"
+      icon={MessagesSquare}
+      title="We couldn’t open this conversation"
+      href="/inbox"
+      linkLabel="Back to messages"
+      action={<RetryButton onRetry={retry} />}
+    >
+      <p>It may belong to a different account, or the link is incomplete.</p>
+    </RouteMessage>
   );
 }
