@@ -650,6 +650,16 @@ export const cancel = mutation({
       isGuest &&
       !isCancellationRefundEligible(checkInAt, new Date().toISOString())
     ) {
+      const openRequest = (
+        await ctx.db
+          .query("lateCancellationRequests")
+          .withIndex("by_reservation_id", (q) =>
+            q.eq("reservationId", reservation._id),
+          )
+          .take(10)
+      ).find((request) => request.status === "open");
+      // A repeated submission joins the open support review instead of queuing another.
+      if (openRequest) return { kind: "support_required" as const };
       const supportRequestId = await ctx.db.insert("lateCancellationRequests", {
         reservationId: reservation._id,
         guestProfileId: actor._id,

@@ -1,7 +1,7 @@
 "use client";
 
 import { Show, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
-import { Heart, House, Search } from "lucide-react";
+import { Heart, House, Luggage, Search } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -52,6 +52,14 @@ export function SiteHeader() {
             </Link>
           )}
           <Show when="signed-in">
+            <Link
+              href="/trips"
+              aria-current={current("/trips")}
+              className={cn(navLink, current("/trips") && "bg-checkin-mist/60")}
+            >
+              <Luggage aria-hidden className="size-4" />
+              <span className="max-sm:sr-only">Trips</span>
+            </Link>
             <Link
               href="/wishlists"
               aria-current={current("/wishlists")}

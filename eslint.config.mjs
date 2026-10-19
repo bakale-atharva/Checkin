@@ -18,6 +18,8 @@ const eslintConfig = defineConfig([
     ".agents/**",
     ".claude/**",
     "convex/_generated/**",
+    // Bklit chart components copied verbatim from its shadcn registry.
+    "components/charts/**",
   ]),
 ]);
 

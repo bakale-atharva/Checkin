@@ -10,6 +10,33 @@
   --checkin-signal: #c65d3a;
   --checkin-mist: #dde7e1;
   --checkin-line: #d7ddd7;
+  /* Bklit chart tokens, mapped onto the Checkin palette. */
+  --chart-1: var(--checkin-ink);
+  --chart-2: var(--checkin-signal);
+  --chart-3: #4f7a69;
+  --chart-4: #9db3a8;
+  --chart-5: var(--checkin-mist);
+  --chart-background: var(--checkin-paper);
+  --chart-foreground: var(--checkin-ink);
+  --chart-foreground-muted: var(--checkin-muted);
+  --chart-line-primary: var(--chart-1);
+  --chart-line-secondary: var(--chart-2);
+  --chart-crosshair: var(--checkin-muted);
+  --chart-grid: var(--checkin-line);
+  --chart-brush-border: var(--chart-grid);
+  --chart-tooltip-background: var(--checkin-paper);
+  --chart-tooltip-foreground: var(--checkin-ink);
+  --chart-tooltip-muted: var(--checkin-muted);
+  --chart-marker-background: var(--checkin-paper);
+  --chart-marker-border: var(--checkin-line);
+  --chart-marker-foreground: var(--checkin-ink);
+  --chart-label: var(--checkin-muted);
+  --chart-scale-01: #f2f5f3;
+  --chart-scale-02: var(--checkin-mist);
+  --chart-scale-03: #9db3a8;
+  --chart-scale-04: #4f7a69;
+  --chart-scale-05: var(--checkin-ink);
+  --chart-scale-pattern-color: var(--checkin-canvas);
 }
 
 @theme inline {
@@ -24,6 +51,20 @@
   --color-checkin-line: var(--checkin-line);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-chart-background: var(--chart-background);
+  --color-chart-foreground: var(--chart-foreground);
+  --color-chart-foreground-muted: var(--chart-foreground-muted);
+  --color-chart-crosshair: var(--chart-crosshair);
+  --color-chart-grid: var(--chart-grid);
+  --color-chart-label: var(--chart-label);
+  --color-chart-marker-background: var(--chart-marker-background);
+  --color-chart-marker-border: var(--chart-marker-border);
+  --color-chart-marker-foreground: var(--chart-marker-foreground);
 }
 
 body {

@@ -376,6 +376,85 @@ describe("dashboards, messaging, and reviews against the test deployment", () =>
     );
   });
 
+  test("shows trip details only to the guest and shares the address once confirmed", async () => {
+    const guest = await h.as("tripdetail");
+    const outsider = await h.as("tripoutsider");
+    const host = await h.as("host");
+    const held = await h.book(guest.client, listingId, stayDates(90, 2));
+
+    assert.equal(
+      await errorCode(
+        outsider.client.run(api.dashboard.tripDetail, {
+          reservationId: held._id,
+        }),
+      ),
+      "FORBIDDEN",
+    );
+    assert.equal(
+      await errorCode(
+        host.client.run(api.dashboard.tripDetail, { reservationId: held._id }),
+      ),
+      "FORBIDDEN",
+    );
+    const pending = await guest.client.run(api.dashboard.tripDetail, {
+      reservationId: held._id,
+    });
+    assert.equal(pending.listing?.address, null);
+
+    const paid = await h.bookAndPay(guest.client, listingId, stayDates(95, 2));
+    const confirmed = await guest.client.run(api.dashboard.tripDetail, {
+      reservationId: paid._id,
+    });
+    assert.equal(confirmed.reservation.status, "confirmed");
+    assert.ok(confirmed.listing?.address?.line1);
+  });
+
+  test("publishes availability as bare dates without reservation details", async () => {
+    const guest = await h.as("availability");
+    const dates = stayDates(100, 2);
+    await h.book(guest.client, listingId, dates);
+    const availability = await h.admin.run(api.listings.publicAvailability, {
+      listingId,
+      startDate: dates.checkIn,
+      endDate: dates.checkOut,
+    });
+    assert.ok(availability);
+    assert.equal(availability.unavailableDates.length, 2);
+    assert.ok(
+      availability.unavailableDates.every((date) => typeof date === "string"),
+    );
+    assert.equal(
+      await errorCode(
+        h.admin.run(api.listings.publicAvailability, {
+          listingId,
+          startDate: dates.checkOut,
+          endDate: dates.checkIn,
+        }),
+      ),
+      "INVALID_LISTING_INPUT",
+    );
+  });
+
+  test("reports booked nights and simulated earnings by month", async () => {
+    const host = await h.as("host");
+    const guest = await h.as("earnings");
+    const dates = stayDates(3, 2);
+    const reservation = await h.bookAndPay(guest.client, listingId, dates);
+    const earnings = await host.client.run(api.dashboard.hostEarnings, {});
+    const months = earnings.months as {
+      month: string;
+      bookedNights: number;
+      earnedCents: number;
+    }[];
+    const booked = reservation.quote.nightlyCharges.map(
+      (night: { date: string }) => night.date.slice(0, 7),
+    );
+    for (const month of new Set(booked)) {
+      const summary = months.find((entry) => entry.month === month);
+      assert.ok(summary && summary.bookedNights > 0 && summary.earnedCents > 0);
+    }
+  });
+
   test("reconciles host earnings with completed bookings", async () => {
     const host = await h.as("host");
     const guest = await (await h.as("trips")).client;

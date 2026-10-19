@@ -5,6 +5,10 @@ import {
 import { ConvexError, v } from "convex/values";
 
 import {
+  monthWindow,
+  summarizeEarnings,
+} from "../lib/earnings/earnings-summary";
+import {
   isConversationUnread,
   MessageRateLimitError,
   nextMessageRateLimit,
@@ -483,10 +487,78 @@ export const guestTrips = query({
               city: listing.publicLocation.city,
               region: listing.publicLocation.region,
               coverPhotoId: listing.coverPhotoId,
+              coverPhotoUrl: await coverPhotoUrl(ctx, listing),
             },
           };
         }),
       ),
+    };
+  },
+});
+
+/**
+ * One of the guest's own reservations with what checkout and trip pages need.
+ * The exact address is only shared once the stay is confirmed.
+ */
+export const tripDetail = query({
+  args: { reservationId: v.id("reservations") },
+  returns: v.any(),
+  handler: async (ctx, args) => {
+    const profile = await requireProfile(ctx);
+    const reservation = await ctx.db.get(args.reservationId);
+    if (!reservation)
+      throw dashboardError("RESERVATION_NOT_FOUND", "Reservation not found.");
+    assertProfileOwner(reservation.guestProfileId, profile._id);
+    const [listing, host, supportRequests, operations] = await Promise.all([
+      ctx.db.get(reservation.listingId),
+      ctx.db.get(reservation.hostProfileId),
+      ctx.db
+        .query("lateCancellationRequests")
+        .withIndex("by_reservation_id", (q) =>
+          q.eq("reservationId", reservation._id),
+        )
+        .order("desc")
+        .take(1),
+      ctx.db
+        .query("paymentOperations")
+        .withIndex("by_reservation_id", (q) =>
+          q.eq("reservationId", reservation._id),
+        )
+        .order("desc")
+        .take(10),
+    ]);
+    const addressShared =
+      reservation.status === "confirmed" || reservation.status === "completed";
+    const supportRequest = supportRequests[0];
+    const refund = operations.find((operation) => operation.kind === "refund");
+    return {
+      reservation,
+      listing: listing && {
+        id: listing._id,
+        title: listing.title,
+        city: listing.publicLocation.city,
+        region: listing.publicLocation.region,
+        countryCode: listing.publicLocation.countryCode,
+        timezone: listing.timezone,
+        bookable: listing.status === "published" && !listing.bookingSuspended,
+        coverPhotoUrl: await coverPhotoUrl(ctx, listing),
+        address: addressShared ? listing.privateAddress : null,
+      },
+      hostFirstName: host?.name?.split(" ")[0] ?? null,
+      chargeProcessing: operations.some(
+        (operation) =>
+          operation.kind === "charge" && operation.status === "pending",
+      ),
+      refund: refund
+        ? { status: refund.status, amountCents: refund.amountCents }
+        : null,
+      supportRequest: supportRequest
+        ? {
+            status: supportRequest.status,
+            resolution: supportRequest.resolution ?? null,
+            createdAt: supportRequest.createdAt,
+          }
+        : null,
     };
   },
 });
@@ -712,18 +784,68 @@ export const hostDashboard = query({
   },
 });
 
+/**
+ * Monthly occupancy and simulated earnings for the host's properties: the
+ * past five months, this month, and the next six.
+ */
+export const hostEarnings = query({
+  args: {},
+  returns: v.any(),
+  handler: async (ctx) => {
+    const profile = await requireProfile(ctx);
+    const [reservations, listings] = await Promise.all([
+      ctx.db
+        .query("reservations")
+        .withIndex("by_host_profile_id_and_created_at", (q) =>
+          q.eq("hostProfileId", profile._id),
+        )
+        .order("desc")
+        .take(500),
+      ctx.db
+        .query("listings")
+        .withIndex("by_owner_profile_id_and_status", (q) =>
+          q.eq("ownerProfileId", profile._id).eq("status", "published"),
+        )
+        .take(10),
+    ]);
+    const months = monthWindow(new Date().toISOString().slice(0, 10), 5, 12);
+    return {
+      months: summarizeEarnings(reservations, months, listings.length),
+      currentMonth: months[5],
+      publishedListings: listings.length,
+      truncated: reservations.length === 500,
+    };
+  },
+});
+
 export const payoutHistory = query({
   args: { paginationOpts: paginationOptsValidator },
   returns: paginationResultValidator(v.any()),
   handler: async (ctx, args) => {
     const profile = await requireProfile(ctx);
-    return await ctx.db
+    const result = await ctx.db
       .query("simulatedPayouts")
       .withIndex("by_host_profile_id_and_paid_at", (q) =>
         q.eq("hostProfileId", profile._id),
       )
       .order("desc")
       .paginate(args.paginationOpts);
+    return {
+      ...result,
+      page: await Promise.all(
+        result.page.map(async (payout) => {
+          const reservation = await ctx.db.get(payout.reservationId);
+          const listing =
+            reservation && (await ctx.db.get(reservation.listingId));
+          return {
+            ...payout,
+            listingTitle: listing?.title ?? null,
+            checkIn: reservation?.checkIn ?? null,
+            checkOut: reservation?.checkOut ?? null,
+          };
+        }),
+      ),
+    };
   },
 });
 

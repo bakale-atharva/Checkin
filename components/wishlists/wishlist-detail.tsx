@@ -1,11 +1,13 @@
 "use client";
 
 import { useMutation, usePaginatedQuery, useQuery } from "convex/react";
-import { ArrowLeft, Trash2 } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import { useState, type FormEvent } from "react";
 
 import { ListingPhoto } from "@/components/discovery/listing-photo";
+import { errorMessage, TextInput } from "@/components/hosting/form-controls";
 import { Button } from "@/components/ui/button";
 import { useProfileReady } from "@/components/use-profile-ready";
 import { api } from "@/convex/_generated/api";
@@ -41,6 +43,33 @@ export function WishlistDetail() {
   );
   const removeItem = useMutation(api.dashboard.removeWishlistItem);
   const deleteWishlist = useMutation(api.dashboard.deleteWishlist);
+  const renameWishlist = useMutation(api.dashboard.renameWishlist);
+  const [renaming, setRenaming] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function attempt(action: () => Promise<unknown>, fallback: string) {
+    setError(null);
+    try {
+      await action();
+      return true;
+    } catch (caught) {
+      setError(errorMessage(caught, fallback));
+      return false;
+    }
+  }
+
+  async function saveName(event: FormEvent) {
+    event.preventDefault();
+    const name = renaming?.trim();
+    if (!name) return;
+    if (
+      await attempt(
+        () => renameWishlist({ wishlistId: id, name }),
+        "Couldn't rename this wishlist.",
+      )
+    )
+      setRenaming(null);
+  }
 
   if (wishlists !== undefined && !wishlist) {
     return (
@@ -70,27 +99,77 @@ export function WishlistDetail() {
         <ArrowLeft aria-hidden className="size-4" /> Wishlists
       </Link>
       <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
-        <h1 className="text-3xl font-semibold tracking-[-0.05em]">
-          {wishlist?.name ?? "Loading…"}
-        </h1>
-        {wishlist ? (
-          <Button
-            variant="outline"
-            onClick={async () => {
-              if (
-                !window.confirm(
-                  `Delete “${wishlist.name}”? Saved stays stay bookable.`,
-                )
-              )
-                return;
-              await deleteWishlist({ wishlistId: id });
-              router.push("/wishlists");
-            }}
+        {renaming !== null ? (
+          <form
+            onSubmit={saveName}
+            className="flex flex-wrap items-center gap-2"
           >
-            <Trash2 aria-hidden className="size-4" /> Delete wishlist
-          </Button>
+            <label htmlFor="wishlist-name" className="sr-only">
+              Wishlist name
+            </label>
+            <TextInput
+              id="wishlist-name"
+              autoFocus
+              value={renaming}
+              maxLength={80}
+              onChange={(event) => setRenaming(event.target.value)}
+              className="w-64"
+            />
+            <Button type="submit" disabled={!renaming.trim()}>
+              Save
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setRenaming(null)}
+            >
+              Cancel
+            </Button>
+          </form>
+        ) : (
+          <h1 className="text-3xl font-semibold tracking-[-0.05em]">
+            {wishlist?.name ?? "Loading…"}
+          </h1>
+        )}
+        {wishlist && renaming === null ? (
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setRenaming(wishlist.name)}
+            >
+              <Pencil aria-hidden className="size-4" /> Rename
+            </Button>
+            <Button
+              variant="outline"
+              onClick={async () => {
+                if (
+                  !window.confirm(
+                    `Delete “${wishlist.name}”? Saved stays stay bookable.`,
+                  )
+                )
+                  return;
+                if (
+                  await attempt(
+                    () => deleteWishlist({ wishlistId: id }),
+                    "Couldn't delete this wishlist.",
+                  )
+                )
+                  router.push("/wishlists");
+              }}
+            >
+              <Trash2 aria-hidden className="size-4" /> Delete wishlist
+            </Button>
+          </div>
         ) : null}
       </div>
+      {error ? (
+        <p
+          role="alert"
+          className="mt-3 text-sm font-medium text-checkin-signal"
+        >
+          {error}
+        </p>
+      ) : null}
 
       {items.status === "LoadingFirstPage" ? (
         <p className="mt-10 text-checkin-muted">Loading saved stays…</p>
@@ -118,7 +197,14 @@ export function WishlistDetail() {
                   type="button"
                   aria-label={`Remove ${item.listing.title} from this wishlist`}
                   onClick={() =>
-                    removeItem({ wishlistId: id, listingId: item.listing.id })
+                    void attempt(
+                      () =>
+                        removeItem({
+                          wishlistId: id,
+                          listingId: item.listing.id,
+                        }),
+                      "Couldn't remove that stay.",
+                    )
                   }
                   className="absolute right-2.5 top-2.5 z-10 grid size-11 place-items-center rounded-full bg-checkin-paper/90 shadow-[0_4px_14px_rgb(23_35_31/0.18)] hover:text-checkin-signal focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-checkin-signal/50"
                 >
