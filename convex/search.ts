@@ -61,6 +61,8 @@ const searchResultValidator = v.object({
   amenities: v.array(v.string()),
   bookingMode: bookingModeValidator,
   coverPhotoId: v.optional(v.id("listingPhotos")),
+  coverPhotoUrl: v.union(v.string(), v.null()),
+  coverPhotoAlt: v.optional(v.string()),
 });
 
 function searchError(code: string, message: string) {
@@ -293,14 +295,28 @@ export const page = query({
     const listings = await Promise.all(
       resultRows.map((result) => ctx.db.get(result.listingId)),
     );
+    const covers = await Promise.all(
+      resultRows.map(async (result) => {
+        const photo = result.coverPhotoId
+          ? await ctx.db.get(result.coverPhotoId)
+          : null;
+        return photo
+          ? {
+              url: await ctx.storage.getUrl(photo.storageId),
+              altText: photo.altText,
+            }
+          : { url: null, altText: undefined };
+      }),
+    );
     const nextOffset = args.offset + resultRows.length;
     return {
       page: resultRows
-        .filter((_, index) => {
+        .map((result, index) => ({ result, index }))
+        .filter(({ index }) => {
           const listing = listings[index];
           return listing?.status === "published" && !listing.bookingSuspended;
         })
-        .map((result) => ({
+        .map(({ result, index }) => ({
           listingId: result.listingId,
           title: result.title,
           city: result.city,
@@ -316,6 +332,8 @@ export const page = query({
           amenities: result.amenities,
           bookingMode: result.bookingMode,
           coverPhotoId: result.coverPhotoId,
+          coverPhotoUrl: covers[index].url,
+          coverPhotoAlt: covers[index].altText,
         })),
       nextOffset,
       isDone: nextOffset >= snapshot.total,

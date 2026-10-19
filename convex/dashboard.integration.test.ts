@@ -217,6 +217,31 @@ describe("dashboards, messaging, and reviews against the test deployment", () =>
       (await outsider.client.run(api.dashboard.listWishlists, {})).length,
       0,
     );
+
+    assert.deepEqual(
+      await guest.client.run(api.dashboard.savedListingIds, {
+        listingIds: [listingId],
+      }),
+      [listingId],
+    );
+    assert.deepEqual(
+      await outsider.client.run(api.dashboard.savedListingIds, {
+        listingIds: [listingId],
+      }),
+      [],
+    );
+    const memberships = await guest.client.run(api.dashboard.listingWishlists, {
+      listingId,
+    });
+    assert.deepEqual(
+      memberships.map((wishlist) => wishlist.containsListing),
+      [true],
+    );
+    assert.equal(
+      (await outsider.client.run(api.dashboard.listingWishlists, { listingId }))
+        .length,
+      0,
+    );
   });
 
   test("hides a one-sided review until both submit, then publishes the aggregate", async () => {

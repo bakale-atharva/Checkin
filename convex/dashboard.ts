@@ -25,6 +25,7 @@ const MAX_WISHLIST_ITEMS = 100;
 const MAX_MESSAGE_LENGTH = 2_000;
 const MAX_CALENDAR_DAYS = 366;
 const MAX_UNREAD_SCAN = 100;
+const MAX_SAVED_LOOKUP = 500;
 
 const messageValidator = v.object({
   _id: v.id("messages"),
@@ -91,6 +92,24 @@ async function requireWishlistOwner(
     throw dashboardError("WISHLIST_NOT_FOUND", "Wishlist not found.");
   assertProfileOwner(wishlist.ownerProfileId, profile._id);
   return { profile, wishlist };
+}
+
+async function coverPhotoUrl(ctx: QueryCtx, listing: Doc<"listings">) {
+  const photo = listing.coverPhotoId
+    ? await ctx.db.get(listing.coverPhotoId)
+    : null;
+  return photo ? await ctx.storage.getUrl(photo.storageId) : null;
+}
+
+async function currentProfileOrNull(ctx: QueryCtx) {
+  const identity = await ctx.auth.getUserIdentity();
+  if (!identity) return null;
+  return await ctx.db
+    .query("users")
+    .withIndex("by_token_identifier", (q) =>
+      q.eq("tokenIdentifier", identity.tokenIdentifier),
+    )
+    .unique();
 }
 
 async function requireConversationParticipant(
@@ -235,6 +254,7 @@ export const listWishlistItems = query({
                   nightlyPriceCents: listing.nightlyPriceCents,
                   publishedRating: listing.publishedRating,
                   coverPhotoId: listing.coverPhotoId,
+                  coverPhotoUrl: await coverPhotoUrl(ctx, listing),
                 },
               }
             : null;
@@ -243,6 +263,82 @@ export const listWishlistItems = query({
         items.filter((item): item is NonNullable<typeof item> => item !== null),
       ),
     };
+  },
+});
+
+/**
+ * Which of the given listings the viewer has saved to any wishlist. Signed-out
+ * viewers get an empty list so discovery stays public.
+ */
+export const savedListingIds = query({
+  args: { listingIds: v.array(v.id("listings")) },
+  returns: v.array(v.id("listings")),
+  handler: async (ctx, args) => {
+    if (args.listingIds.length > MAX_SAVED_LOOKUP)
+      throw dashboardError(
+        "TOO_MANY_LISTINGS",
+        `Check at most ${MAX_SAVED_LOOKUP} listings at once.`,
+      );
+    const profile = await currentProfileOrNull(ctx);
+    if (!profile || args.listingIds.length === 0) return [];
+    const wanted = new Set<string>(args.listingIds);
+    const wishlists = await ctx.db
+      .query("wishlists")
+      .withIndex("by_owner_profile_id_and_updated_at", (q) =>
+        q.eq("ownerProfileId", profile._id),
+      )
+      .take(100);
+    const saved = new Set<Id<"listings">>();
+    await Promise.all(
+      wishlists.map(async (wishlist) => {
+        const items = await ctx.db
+          .query("wishlistItems")
+          .withIndex("by_wishlist_id_and_created_at", (q) =>
+            q.eq("wishlistId", wishlist._id),
+          )
+          .take(MAX_WISHLIST_ITEMS);
+        for (const item of items)
+          if (wanted.has(item.listingId)) saved.add(item.listingId);
+      }),
+    );
+    return [...saved];
+  },
+});
+
+/** The viewer's wishlists, each marked with whether it contains the listing. */
+export const listingWishlists = query({
+  args: { listingId: v.id("listings") },
+  returns: v.array(
+    v.object({
+      wishlistId: v.id("wishlists"),
+      name: v.string(),
+      containsListing: v.boolean(),
+    }),
+  ),
+  handler: async (ctx, args) => {
+    const profile = await requireProfile(ctx);
+    const wishlists = await ctx.db
+      .query("wishlists")
+      .withIndex("by_owner_profile_id_and_updated_at", (q) =>
+        q.eq("ownerProfileId", profile._id),
+      )
+      .order("desc")
+      .take(100);
+    return await Promise.all(
+      wishlists.map(async (wishlist) => {
+        const item = await ctx.db
+          .query("wishlistItems")
+          .withIndex("by_wishlist_id_and_listing_id", (q) =>
+            q.eq("wishlistId", wishlist._id).eq("listingId", args.listingId),
+          )
+          .unique();
+        return {
+          wishlistId: wishlist._id,
+          name: wishlist.name,
+          containsListing: item !== null,
+        };
+      }),
+    );
   },
 });
 
