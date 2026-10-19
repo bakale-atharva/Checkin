@@ -506,6 +506,23 @@ export const setPhotoOrder = mutation({
   },
 });
 
+export const setCoverPhoto = mutation({
+  args: { listingId: v.id("listings"), photoId: v.id("listingPhotos") },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const { listing } = await getOwnedListing(ctx, args.listingId);
+    const photo = await ctx.db.get(args.photoId);
+    if (!photo || photo.listingId !== listing._id) {
+      throw new ConvexError(listingError(ListingErrorCode.InvalidPhoto));
+    }
+    await ctx.db.patch(listing._id, {
+      coverPhotoId: photo._id,
+      updatedAt: Date.now(),
+    });
+    return null;
+  },
+});
+
 export const setBlockedDate = mutation({
   args: { listingId: v.id("listings"), date: v.string(), blocked: v.boolean() },
   returns: v.null(),
@@ -604,6 +621,52 @@ export const myListings = query({
       )
       .order("desc")
       .take(100);
+  },
+});
+
+const ownedPhotoValidator = v.object({
+  _id: v.id("listingPhotos"),
+  url: v.union(v.string(), v.null()),
+  altText: v.optional(v.string()),
+  position: v.number(),
+});
+
+/** A host's own listing, including the private address, for the editing wizard. */
+export const getOwned = query({
+  args: { listingId: v.id("listings") },
+  returns: v.object({
+    listing: listingValidator,
+    photos: v.array(ownedPhotoValidator),
+    hasReservations: v.boolean(),
+  }),
+  handler: async (ctx, args) => {
+    const { listing } = await getOwnedListing(ctx, args.listingId);
+    const [photos, nights] = await Promise.all([
+      ctx.db
+        .query("listingPhotos")
+        .withIndex("by_listing_id_and_position", (q) =>
+          q.eq("listingId", listing._id),
+        )
+        .take(MAX_LISTING_PHOTOS),
+      ctx.db
+        .query("reservationNights")
+        .withIndex("by_listing_id_and_date", (q) =>
+          q.eq("listingId", listing._id),
+        )
+        .take(1),
+    ]);
+    return {
+      listing,
+      photos: await Promise.all(
+        photos.map(async (photo) => ({
+          _id: photo._id,
+          url: await listingPhotoUrl(ctx, photo),
+          altText: photo.altText,
+          position: photo.position,
+        })),
+      ),
+      hasReservations: nights.length > 0,
+    };
   },
 });
 
