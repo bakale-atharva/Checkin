@@ -1,10 +1,21 @@
 "use client";
 
 import { Show, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
-import { Heart, House, Luggage, Search } from "lucide-react";
+import { useQuery } from "convex/react";
+import {
+  Bell,
+  Heart,
+  House,
+  Luggage,
+  MessageCircle,
+  Search,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { useProfileReady } from "@/components/use-profile-ready";
+import { api } from "@/convex/_generated/api";
+import { badgeCount } from "@/lib/messaging/inbox-presentation";
 import { cn } from "@/lib/utils";
 
 const navLink =
@@ -71,6 +82,7 @@ export function SiteHeader() {
               <Heart aria-hidden className="size-4" />
               <span className="max-sm:sr-only">Wishlists</span>
             </Link>
+            <UnreadLinks current={current} />
             <span className="ml-1">
               <UserButton />
             </span>
@@ -89,4 +101,52 @@ export function SiteHeader() {
       </nav>
     </header>
   );
+}
+
+function UnreadLinks({
+  current,
+}: {
+  current: (prefix: string) => "page" | undefined;
+}) {
+  const profileReady = useProfileReady();
+  const summary = useQuery(
+    api.dashboard.unreadSummary,
+    profileReady ? {} : "skip",
+  );
+  const links = [
+    {
+      href: "/inbox",
+      label: "Messages",
+      Icon: MessageCircle,
+      badge: summary && badgeCount(summary.conversations, summary.capped),
+    },
+    {
+      href: "/notifications",
+      label: "Notifications",
+      Icon: Bell,
+      badge: summary && badgeCount(summary.notifications, summary.capped),
+    },
+  ];
+  return links.map(({ href, label, Icon, badge }) => (
+    <Link
+      key={href}
+      href={href}
+      aria-current={current(href)}
+      className={cn(navLink, "relative", current(href) && "bg-checkin-mist/60")}
+    >
+      <Icon aria-hidden className="size-4" />
+      <span className="sr-only">
+        {label}
+        {badge ? `, ${badge} unread` : ""}
+      </span>
+      {badge ? (
+        <span
+          aria-hidden
+          className="absolute top-0.5 right-0.5 grid h-4.5 min-w-4.5 place-items-center rounded-full bg-checkin-signal px-1 text-[0.65rem] leading-none font-bold text-white tabular-nums"
+        >
+          {badge}
+        </span>
+      ) : null}
+    </Link>
+  ));
 }

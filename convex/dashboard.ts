@@ -41,6 +41,22 @@ const messageValidator = v.object({
   createdAt: v.number(),
 });
 
+const reservationContextValidator = v.object({
+  reservationId: v.id("reservations"),
+  role: v.union(v.literal("guest"), v.literal("host")),
+  status: v.union(
+    v.literal("pending"),
+    v.literal("confirmed"),
+    v.literal("cancelled"),
+    v.literal("completed"),
+    v.literal("declined"),
+    v.literal("expired"),
+  ),
+  listingTitle: v.union(v.string(), v.null()),
+  checkIn: v.string(),
+  checkOut: v.string(),
+});
+
 const notificationValidator = v.object({
   _id: v.id("notifications"),
   _creationTime: v.number(),
@@ -54,6 +70,7 @@ const notificationValidator = v.object({
   conversationId: v.optional(v.id("conversations")),
   readAt: v.optional(v.number()),
   createdAt: v.number(),
+  context: v.union(reservationContextValidator, v.null()),
 });
 
 const guestRatingsValidator = v.object({
@@ -115,6 +132,33 @@ async function currentProfileOrNull(ctx: QueryCtx) {
       q.eq("tokenIdentifier", identity.tokenIdentifier),
     )
     .unique();
+}
+
+/** What a participant needs to recognise a reservation in their inbox or notifications. */
+async function reservationContext(
+  ctx: QueryCtx,
+  reservationId: Id<"reservations"> | undefined,
+  profileId: Id<"users">,
+) {
+  const reservation = reservationId ? await ctx.db.get(reservationId) : null;
+  if (
+    !reservation ||
+    (reservation.guestProfileId !== profileId &&
+      reservation.hostProfileId !== profileId)
+  )
+    return null;
+  const listing = await ctx.db.get(reservation.listingId);
+  return {
+    reservationId: reservation._id,
+    role:
+      reservation.guestProfileId === profileId
+        ? ("guest" as const)
+        : ("host" as const),
+    status: reservation.status,
+    listingTitle: listing?.title ?? null,
+    checkIn: reservation.checkIn,
+    checkOut: reservation.checkOut,
+  };
 }
 
 async function requireConversationParticipant(
@@ -1028,10 +1072,61 @@ export const inbox = query({
               name: otherProfile.name,
               imageUrl: otherProfile.imageUrl,
             },
+            reservation: await reservationContext(
+              ctx,
+              conversation.reservationId,
+              profile._id,
+            ),
           };
         }),
       ).then((items) =>
         items.filter((item): item is NonNullable<typeof item> => !!item),
+      ),
+    };
+  },
+});
+
+/** Header data for an open conversation: who it's with and which stay it's about. */
+export const conversationDetail = query({
+  args: { conversationId: v.id("conversations") },
+  returns: v.object({
+    conversationId: v.id("conversations"),
+    viewerProfileId: v.id("users"),
+    lastReadAt: v.union(v.number(), v.null()),
+    counterpart: v.union(
+      v.object({
+        name: v.union(v.string(), v.null()),
+        imageUrl: v.union(v.string(), v.null()),
+      }),
+      v.null(),
+    ),
+    reservation: v.union(reservationContextValidator, v.null()),
+  }),
+  handler: async (ctx, args) => {
+    const { profile, participant } = await requireConversationParticipant(
+      ctx,
+      args.conversationId,
+    );
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation)
+      throw dashboardError("CONVERSATION_NOT_FOUND", "Conversation not found.");
+    const counterpart = await ctx.db.get(
+      conversation.guestProfileId === profile._id
+        ? conversation.hostProfileId
+        : conversation.guestProfileId,
+    );
+    return {
+      conversationId: conversation._id,
+      viewerProfileId: profile._id,
+      lastReadAt: participant.lastReadAt ?? null,
+      counterpart: counterpart && {
+        name: counterpart.name ?? null,
+        imageUrl: counterpart.imageUrl ?? null,
+      },
+      reservation: await reservationContext(
+        ctx,
+        conversation.reservationId,
+        profile._id,
       ),
     };
   },
@@ -1042,13 +1137,26 @@ export const notifications = query({
   returns: paginationResultValidator(notificationValidator),
   handler: async (ctx, args) => {
     const profile = await requireProfile(ctx);
-    return await ctx.db
+    const result = await ctx.db
       .query("notifications")
       .withIndex("by_profile_id_and_created_at", (q) =>
         q.eq("profileId", profile._id),
       )
       .order("desc")
       .paginate(args.paginationOpts);
+    return {
+      ...result,
+      page: await Promise.all(
+        result.page.map(async (notification) => ({
+          ...notification,
+          context: await reservationContext(
+            ctx,
+            notification.reservationId,
+            profile._id,
+          ),
+        })),
+      ),
+    };
   },
 });
 
@@ -1248,9 +1356,21 @@ export const reservationReviewStatus = query({
     const theirs =
       reviews.find((review) => review.reviewerProfileId !== profile._id) ??
       null;
+    const isGuest = reservation.guestProfileId === profile._id;
+    const [listing, counterpart] = await Promise.all([
+      ctx.db.get(reservation.listingId),
+      ctx.db.get(
+        isGuest ? reservation.hostProfileId : reservation.guestProfileId,
+      ),
+    ]);
     return {
       eligible: reservation.status === "completed",
-      role: reservation.guestProfileId === profile._id ? "guest" : "host",
+      status: reservation.status,
+      listingTitle: listing?.title ?? null,
+      counterpartFirstName: counterpart?.name?.split(" ")[0] ?? null,
+      checkIn: reservation.checkIn,
+      checkOut: reservation.checkOut,
+      role: isGuest ? "guest" : "host",
       reviewDeadlineAt: Date.parse(reservation.checkOutAt) + REVIEW_WINDOW_MS,
       mine,
       counterpartSubmitted: theirs !== null,
