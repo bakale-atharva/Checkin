@@ -1,19 +1,8 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { clerkMiddleware } from "@clerk/nextjs/server";
 
-// Discovery stays public; account areas require sign-in. Convex functions
-// enforce ownership independently of this redirect.
-const isProtectedRoute = createRouteMatcher([
-  "/hosting(.*)",
-  "/trips(.*)",
-  "/checkout(.*)",
-  "/messages(.*)",
-  "/wishlists(.*)",
-  "/billing(.*)",
-]);
-
-export default clerkMiddleware(async (auth, request) => {
-  if (isProtectedRoute(request)) await auth.protect();
-});
+// Auth is enforced per resource: protected pages call `auth.protect()` and
+// Convex functions check ownership. The proxy only attaches Clerk's auth state.
+export default clerkMiddleware();
 
 export const config = {
   matcher: [
