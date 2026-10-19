@@ -4,7 +4,7 @@ import { useMutation, useQuery } from "convex/react";
 import { Check, ChevronLeft, CircleAlert, Plus, X } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Surface } from "@/components/ui/surface";
@@ -240,6 +240,15 @@ function WizardForm({
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const readOnly = listing.status === "archived";
+  const unsaved = dirty && !readOnly;
+
+  // Warn before a reload or tab close drops edits that haven't been saved yet.
+  useEffect(() => {
+    if (!unsaved) return;
+    const warn = (event: BeforeUnloadEvent) => event.preventDefault();
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [unsaved]);
 
   const edit = (patch: Partial<Draft>) => {
     setDraft((current) => ({ ...current, ...patch }));
@@ -288,6 +297,15 @@ function WizardForm({
     <main className="mx-auto w-full max-w-[90rem] flex-1 px-4 py-8 sm:px-6 lg:px-8">
       <Link
         href="/hosting"
+        onClick={(event) => {
+          if (
+            unsaved &&
+            !window.confirm(
+              "Leave without saving? Your changes on this step will be lost.",
+            )
+          )
+            event.preventDefault();
+        }}
         className="inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-checkin-muted hover:text-checkin-ink"
       >
         <ChevronLeft aria-hidden className="size-4" />

@@ -57,11 +57,13 @@ export function WishlistsOverview() {
           </label>
           <input
             id="new-wishlist"
+            name="wishlistName"
+            autoComplete="off"
             value={name}
             maxLength={80}
             onChange={(event) => setName(event.target.value)}
-            placeholder="New wishlist"
-            className="min-h-11 w-56 rounded-[0.8rem] border border-checkin-line bg-checkin-paper px-3 text-sm outline-none focus:border-checkin-ink"
+            placeholder="e.g. Summer weekends…"
+            className="min-h-11 w-56 rounded-[0.8rem] border border-checkin-line bg-checkin-paper px-3 text-sm focus-visible:border-checkin-ink focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-checkin-signal/25"
           />
           <Button type="submit" disabled={!name.trim()}>
             <Plus aria-hidden className="size-4" /> Create

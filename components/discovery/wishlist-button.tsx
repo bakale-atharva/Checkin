@@ -212,13 +212,15 @@ function WishlistPanel({
         </label>
         <input
           id={`${id}-name`}
+          name="wishlistName"
+          autoComplete="off"
           value={name}
           maxLength={80}
           onChange={(event) => setName(event.target.value)}
           placeholder={
-            wishlists?.length ? "New wishlist" : DEFAULT_WISHLIST_NAME
+            wishlists?.length ? "New wishlist…" : DEFAULT_WISHLIST_NAME
           }
-          className="min-h-11 min-w-0 flex-1 rounded-[0.7rem] border border-checkin-line bg-transparent px-3 text-sm outline-none focus:border-checkin-ink"
+          className="min-h-11 min-w-0 flex-1 rounded-[0.7rem] border border-checkin-line bg-transparent px-3 text-sm focus-visible:border-checkin-ink focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-checkin-signal/25"
         />
         <button
           type="submit"
