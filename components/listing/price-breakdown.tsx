@@ -11,16 +11,24 @@ export type PriceLines = {
   totalCents: number;
 };
 
+type PriceBreakdownProps = { quote: PriceLines; className?: string };
+
+/** Itemized charges for a quoted or reserved stay. */
+export function PriceBreakdown(props: PriceBreakdownProps) {
+  return <PriceLinesList {...props} totalLabel="Total (USD)" />;
+}
+
+/** Itemized charges for dates the guest is still choosing. */
+export function EstimatedPriceBreakdown(props: PriceBreakdownProps) {
+  return <PriceLinesList {...props} totalLabel="Estimated total" />;
+}
+
 /** Nightly charges, fees, and total. Every amount is a simulated test-mode price. */
-export function PriceBreakdown({
+function PriceLinesList({
   quote,
-  estimate,
+  totalLabel,
   className,
-}: {
-  quote: PriceLines;
-  estimate?: boolean;
-  className?: string;
-}) {
+}: PriceBreakdownProps & { totalLabel: string }) {
   const nights = quote.nightlyCharges.length;
   const rates = new Set(quote.nightlyCharges.map((night) => night.amountCents));
   const accommodationLabel =
@@ -55,7 +63,7 @@ export function PriceBreakdown({
       </dl>
       <div className="mt-3 flex items-center justify-between gap-3 border-t border-checkin-line pt-3 font-semibold">
         <span className="flex flex-wrap items-center gap-2">
-          {estimate ? "Estimated total" : "Total (USD)"}
+          {totalLabel}
           <SimulationBadge>Simulated</SimulationBadge>
         </span>
         <span className="tabular-nums">

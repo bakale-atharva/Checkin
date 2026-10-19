@@ -23,6 +23,8 @@ export type DiscoveryFilters = {
   mode?: BookingMode;
   sort?: SearchSort;
   near?: { latitude: number; longitude: number };
+  /** Small-screen results view; list is the default and stays out of the URL. */
+  view?: "map";
 };
 
 type ReadableParams = { get(name: string): string | null };
@@ -117,6 +119,7 @@ export function parseDiscoveryParams(params: ReadableParams): DiscoveryFilters {
     mode: oneOf(params.get("mode"), bookingModes),
     sort,
     near,
+    view: oneOf(params.get("view"), ["map"] as const),
   };
 }
 
@@ -147,6 +150,7 @@ export function serializeDiscoveryParams(filters: DiscoveryFilters) {
       `${filters.near.latitude.toFixed(4)},${filters.near.longitude.toFixed(4)}`,
     );
   }
+  set("view", filters.view);
   return params.toString();
 }
 

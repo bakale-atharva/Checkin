@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, type ReactNode, useContext } from "react";
+import { createContext, type ReactNode, use } from "react";
 
 const StaticChartPreviewContext = createContext(false);
 
@@ -18,5 +18,5 @@ export function StaticChartPreviewProvider({
 }
 
 export function useStaticChartPreview() {
-  return useContext(StaticChartPreviewContext);
+  return use(StaticChartPreviewContext);
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, type ReactNode, useContext, useMemo } from "react";
+import { createContext, type ReactNode, use, useMemo } from "react";
 
 export interface SpringConfig {
   stiffness: number;
@@ -49,7 +49,7 @@ export function ChartConfigProvider({
 }
 
 export function useChartConfig(): ChartConfigValue {
-  return useContext(ChartConfigContext) ?? DEFAULT_CHART_CONFIG;
+  return use(ChartConfigContext) ?? DEFAULT_CHART_CONFIG;
 }
 
 const DEFAULT_TOOLTIP_BOX_DAMPING =

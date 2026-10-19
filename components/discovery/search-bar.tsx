@@ -146,7 +146,7 @@ export function SearchBar({
         <div className="relative">
           <label
             htmlFor={`${id}-where`}
-            className="flex min-h-14 cursor-text items-center gap-3 rounded-[0.8rem] px-3 transition-colors focus-within:bg-checkin-mist/40 hover:bg-checkin-mist/30"
+            className="flex min-h-14 cursor-text items-center gap-3 rounded-[0.8rem] px-3 transition-colors focus-within:bg-checkin-mist/40 hover:bg-checkin-mist/30 has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-checkin-signal/35"
           >
             <MapPin
               aria-hidden
@@ -167,7 +167,7 @@ export function SearchBar({
                 }
                 autoComplete="off"
                 value={where}
-                placeholder="Search destinations"
+                placeholder="Search destinations…"
                 onChange={(event) => {
                   setWhere(event.target.value);
                   setNear(undefined);
@@ -338,7 +338,7 @@ function DateField({
   return (
     <label
       htmlFor={id}
-      className="flex min-h-14 cursor-text items-center gap-3 rounded-[0.8rem] px-3 transition-colors focus-within:bg-checkin-mist/40 hover:bg-checkin-mist/30"
+      className="flex min-h-14 cursor-text items-center gap-3 rounded-[0.8rem] px-3 transition-colors focus-within:bg-checkin-mist/40 hover:bg-checkin-mist/30 has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-checkin-signal/35"
     >
       <CalendarDays
         aria-hidden

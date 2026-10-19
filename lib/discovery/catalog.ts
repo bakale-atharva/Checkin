@@ -51,3 +51,18 @@ export function formatNightlyPrice(cents: number) {
     maximumFractionDigits: cents % 100 === 0 ? 0 : 2,
   }).format(cents / 100);
 }
+
+const ratingFormats = new Map<number, Intl.NumberFormat>();
+
+/** Fixed-precision star rating, e.g. 4.87 (overall) or 4.9 (category). */
+export function formatRating(value: number, digits = 2) {
+  let format = ratingFormats.get(digits);
+  if (!format) {
+    format = new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: digits,
+      maximumFractionDigits: digits,
+    });
+    ratingFormats.set(digits, format);
+  }
+  return format.format(value);
+}

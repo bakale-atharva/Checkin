@@ -67,6 +67,22 @@
   --color-chart-marker-foreground: var(--chart-marker-foreground);
 }
 
+html {
+  color-scheme: light;
+  /* Keep focused and anchored elements clear of the sticky h-16 header. */
+  scroll-padding-top: 5rem;
+}
+
+a,
+button,
+input,
+label,
+select,
+summary,
+textarea {
+  touch-action: manipulation;
+}
+
 body {
   min-width: 320px;
   background: var(--checkin-canvas);

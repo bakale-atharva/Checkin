@@ -29,6 +29,7 @@ import { cn } from "@/lib/utils";
 import { Avatar, displayName, formatMessageTime, stayLabel } from "./shared";
 
 const MAX_MESSAGE_LENGTH = 2_000;
+const countFormat = new Intl.NumberFormat("en-US");
 
 type OutboxMessage = {
   localId: string;
@@ -355,7 +356,7 @@ export function ConversationThread({
           )}
         >
           {tooLong
-            ? `${draft.trim().length.toLocaleString()} / 2,000 characters — shorten your message to send it.`
+            ? `${countFormat.format(draft.trim().length)} / ${countFormat.format(MAX_MESSAGE_LENGTH)} characters — shorten your message to send it.`
             : "Enter to send, Shift + Enter for a new line. Keep payments and contact details on Checkin."}
         </p>
       </form>

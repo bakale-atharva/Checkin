@@ -84,7 +84,7 @@ export function CancelTripDialog({
       <dialog
         ref={dialogRef}
         aria-labelledby="cancel-title"
-        className="m-auto w-[min(32rem,calc(100vw-2rem))] rounded-[1.1rem] border border-checkin-line bg-checkin-paper p-0 text-checkin-ink backdrop:bg-checkin-ink/50"
+        className="m-auto w-[min(32rem,calc(100vw-2rem))] overscroll-contain rounded-[1.1rem] border border-checkin-line bg-checkin-paper p-0 text-checkin-ink backdrop:bg-checkin-ink/50"
       >
         <form onSubmit={submit} className="space-y-5 p-6">
           <h2 id="cancel-title" className="text-xl font-semibold">

@@ -109,6 +109,8 @@ export function WishlistDetail() {
             </label>
             <TextInput
               id="wishlist-name"
+              name="wishlistName"
+              autoComplete="off"
               autoFocus
               value={renaming}
               maxLength={80}

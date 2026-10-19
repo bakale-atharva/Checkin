@@ -6,6 +6,7 @@ import { Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
+import { formatRating } from "@/lib/discovery/catalog";
 
 export type ReviewSummary = {
   count: number;
@@ -62,7 +63,7 @@ export function ListingReviews({
       >
         <Star aria-hidden className="size-5 fill-checkin-ink" />
         {summary
-          ? `${summary.overall.toFixed(2)} · ${summary.count} ${summary.count === 1 ? "review" : "reviews"}`
+          ? `${formatRating(summary.overall)} · ${summary.count} ${summary.count === 1 ? "review" : "reviews"}`
           : "No reviews yet"}
       </h2>
       {summary ? (
@@ -81,7 +82,7 @@ export function ListingReviews({
                   />
                 </span>
                 <span className="w-8 text-right tabular-nums">
-                  {summary[key].toFixed(1)}
+                  {formatRating(summary[key], 1)}
                 </span>
               </dd>
             </div>

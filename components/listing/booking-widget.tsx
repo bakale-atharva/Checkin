@@ -9,7 +9,7 @@ import type { StaySelection } from "@/lib/booking/stay-selection";
 import { formatNightlyPrice } from "@/lib/discovery/catalog";
 import type { ReservationQuote } from "@/lib/reservations/reservation-policy";
 import { cn } from "@/lib/utils";
-import { formatStayDate, PriceBreakdown } from "./price-breakdown";
+import { EstimatedPriceBreakdown, formatStayDate } from "./price-breakdown";
 
 const primaryLink =
   "inline-flex h-13 w-full items-center justify-center rounded-[0.8rem] bg-checkin-signal px-5 text-base font-semibold text-white transition-colors hover:bg-checkin-signal/90 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-checkin-signal/35";
@@ -104,7 +104,7 @@ export function BookingWidget(props: BookingWidgetProps) {
       </p>
 
       {estimate && !conflict ? (
-        <PriceBreakdown quote={estimate} estimate className="mt-5" />
+        <EstimatedPriceBreakdown quote={estimate} className="mt-5" />
       ) : null}
       {selection.checkIn || selection.checkOut ? (
         <button
@@ -154,7 +154,7 @@ export function MobileBookingBar({
 }: BookingWidgetProps) {
   const ready = checkoutHref && !conflict;
   return (
-    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-checkin-line bg-checkin-paper/95 px-4 py-3 backdrop-blur lg:hidden">
+    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-checkin-line bg-checkin-paper/95 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur lg:hidden">
       <div className="mx-auto flex max-w-xl items-center justify-between gap-4">
         <div className="min-w-0 text-sm">
           <p>

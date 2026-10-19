@@ -22,6 +22,15 @@ test("round-trips every supported filter through the URL", () => {
   assert.equal(serializeDiscoveryParams(filters), query);
 });
 
+test("keeps the map view in the URL and leaves it out of the search", () => {
+  const filters = parseDiscoveryParams(params("where=Lisbon&view=map"));
+
+  assert.equal(filters.view, "map");
+  assert.equal(serializeDiscoveryParams(filters), "where=Lisbon&view=map");
+  assert.equal("view" in toSearchInput(filters), false);
+  assert.equal(parseDiscoveryParams(params("view=grid")).view, undefined);
+});
+
 test("drops malformed values instead of failing the page", () => {
   const filters = parseDiscoveryParams(
     params(
