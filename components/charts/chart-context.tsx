@@ -19,7 +19,7 @@ import {
   type ReactNode,
   type RefObject,
   type SetStateAction,
-  useContext,
+  use,
   useMemo,
 } from "react";
 import type { ChartPhase, ChartStatus } from "./chart-phase";
@@ -374,7 +374,7 @@ export function ChartProvider({
  * context). Prefer this in cold consumers like axes, grid, pattern fills.
  */
 export function useChartStable(): ChartStableContextValue {
-  const context = useContext(ChartStableContext);
+  const context = use(ChartStableContext);
   if (!context) {
     throw new Error(
       "useChartStable must be used within a ChartProvider. " +
@@ -400,7 +400,7 @@ export function useYScale(
  * actually reads hover state.
  */
 export function useChartHover(): ChartHoverContextValue {
-  const context = useContext(ChartHoverContext);
+  const context = use(ChartHoverContext);
   if (!context) {
     throw new Error(
       "useChartHover must be used within a ChartProvider. " +
